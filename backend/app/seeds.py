@@ -32,7 +32,9 @@ async def seed():
             await conn.execute(sa_text("DROP SCHEMA public CASCADE"))
             await conn.execute(sa_text("CREATE SCHEMA public"))
         else:
+            await conn.execute(sa_text("PRAGMA foreign_keys=OFF"))
             await conn.run_sync(Base.metadata.drop_all)
+            await conn.execute(sa_text("PRAGMA foreign_keys=ON"))
         await conn.run_sync(Base.metadata.create_all)
 
     async with async_session() as session:
@@ -71,7 +73,7 @@ async def seed():
         await session.flush()
 
         # USERS
-        admin = User(id=str(uuid.uuid4()), email="admin@gestaoobras.com", password_hash=get_password_hash("admin123"), name="Administrador do Sistema", phone="(11) 99999-0001", role_id=admin_role.id, is_active=True)
+        admin = User(id=str(uuid.uuid4()), email="firetecnologia@gmail.com", password_hash=get_password_hash("admin123"), name="Administrador do Sistema", phone="(11) 99999-0001", role_id=admin_role.id, is_active=True)
         ceo = User(id=str(uuid.uuid4()), email="ceo@gestaoobras.com", password_hash=get_password_hash("ceo123"), name="Carlos Eduardo (CEO)", phone="(11) 99999-0002", role_id=direcao_role.id, is_active=True)
         comercial_user = User(id=str(uuid.uuid4()), email="comercial@gestaoobras.com", password_hash=get_password_hash("comercial123"), name="Ana Paula (Comercial)", phone="(11) 99999-0003", role_id=comercial_role.id, is_active=True)
         engenheiro_user = User(id=str(uuid.uuid4()), email="engenheiro@gestaoobras.com", password_hash=get_password_hash("eng123"), name="Roberto Silva (Engenheiro)", phone="(11) 99999-0004", role_id=engenheiro_role.id, is_active=True)

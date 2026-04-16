@@ -59,7 +59,7 @@ export default function LoginPage() {
             </Button>
           </form>
           <div className="mt-4 text-xs text-slate-500 text-center">
-            <p>Demo: admin@gestaoobras.com / admin123</p>
+            <p>Demo: firetecnologia@gmail.com / admin123</p>
           </div>
         </CardContent>
       </Card>
