@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { proposalsApi, clientsApi } from "@/services/api"
+import { useToast } from "@/components/ui/toast"
 import { Plus, Search, Pencil, Trash2, CheckCircle, FileSignature } from "lucide-react"
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "info" | "success" | "warning" | "destructive" | "secondary" }> = {
@@ -32,14 +33,15 @@ export default function ProposalsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Proposal | null>(null)
   const [form, setForm] = useState({ title: "", client_id: "", description: "", markup_percent: "30", status: "rascunho" })
+  const { showToast } = useToast()
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       const [pRes, cRes] = await Promise.all([proposalsApi.list({ search, page_size: 50 }), clientsApi.list({ page_size: 100 })])
       setProposals(pRes.data.items); setClients(cRes.data.items)
-    } catch { /* empty */ } finally { setLoading(false) }
-  }, [search])
+    } catch { showToast("Erro ao carregar propostas", "error") } finally { setLoading(false) }
+  }, [search, showToast])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -48,23 +50,35 @@ export default function ProposalsPage() {
       const data = { ...form, markup_percent: Number(form.markup_percent) }
       if (editing) { await proposalsApi.update(editing.id, data) } else { await proposalsApi.create(data) }
       setShowForm(false); setEditing(null); fetchData()
-    } catch { /* empty */ }
+      showToast(editing ? "Proposta atualizada" : "Proposta criada")
+    } catch (err) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Erro ao salvar proposta"
+      showToast(msg, "error")
+    }
   }
 
   const handleApprove = async (id: string) => {
     if (confirm("Aprovar esta proposta?")) {
-      try { await proposalsApi.approve(id); fetchData() } catch { /* empty */ }
+      try { await proposalsApi.approve(id); showToast("Proposta aprovada!"); fetchData() } catch (err) {
+        const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Erro ao aprovar"
+        showToast(msg, "error")
+      }
     }
   }
 
   const handleGenerateContract = async (id: string) => {
     if (confirm("Gerar contrato a partir desta proposta?")) {
-      try { await proposalsApi.generateContract(id, { payment_conditions: "4 parcelas mensais", installments_count: 4 }); fetchData() } catch { /* empty */ }
+      try { await proposalsApi.generateContract(id, { payment_conditions: "4 parcelas mensais", installments_count: 4 }); showToast("Contrato gerado!"); fetchData() } catch (err) {
+        const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Erro ao gerar contrato"
+        showToast(msg, "error")
+      }
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm("Excluir esta proposta?")) { await proposalsApi.delete(id); fetchData() }
+    if (confirm("Excluir esta proposta?")) {
+      try { await proposalsApi.delete(id); showToast("Proposta excluida"); fetchData() } catch { showToast("Erro ao excluir", "error") }
+    }
   }
 
   const formatBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)

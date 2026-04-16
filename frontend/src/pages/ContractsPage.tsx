@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { contractsApi, clientsApi } from "@/services/api"
-import { Plus, Search, Pencil, Trash2, HardHat } from "lucide-react"
+import { useToast } from "@/components/ui/toast"
+import { Plus, Search, Pencil, Trash2, HardHat, Banknote } from "lucide-react"
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "info" | "success" | "warning" | "destructive" | "secondary" }> = {
   rascunho: { label: "Rascunho", variant: "secondary" },
@@ -31,14 +32,15 @@ export default function ContractsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Contract | null>(null)
   const [form, setForm] = useState({ title: "", client_id: "", scope_summary: "", total_value: "", payment_conditions: "4 parcelas mensais", installments_count: "4", start_date: "", end_date: "" })
+  const { showToast } = useToast()
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       const [ctrRes, clRes] = await Promise.all([contractsApi.list({ search, page_size: 50 }), clientsApi.list({ page_size: 100 })])
       setContracts(ctrRes.data.items); setClients(clRes.data.items)
-    } catch { /* empty */ } finally { setLoading(false) }
-  }, [search])
+    } catch { showToast("Erro ao carregar contratos", "error") } finally { setLoading(false) }
+  }, [search, showToast])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -47,17 +49,45 @@ export default function ContractsPage() {
       const data = { ...form, total_value: Number(form.total_value), installments_count: Number(form.installments_count), start_date: form.start_date || undefined, end_date: form.end_date || undefined }
       if (editing) { await contractsApi.update(editing.id, data) } else { await contractsApi.create(data) }
       setShowForm(false); setEditing(null); fetchData()
-    } catch { /* empty */ }
+      showToast(editing ? "Contrato atualizado" : "Contrato criado")
+    } catch (err) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Erro ao salvar contrato"
+      showToast(msg, "error")
+    }
   }
 
   const handleGenerateProject = async (id: string) => {
     if (confirm("Gerar obra a partir deste contrato?")) {
-      try { await contractsApi.generateProject(id, { name: "Nova Obra", type: "reforma_residencial" }); fetchData(); alert("Obra gerada com sucesso!") } catch { /* empty */ }
+      try {
+        const res = await contractsApi.generateProject(id, { name: "Nova Obra", type: "reforma_residencial" })
+        showToast(res.data.message || "Obra gerada com sucesso!")
+        fetchData()
+      } catch (err) {
+        const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Erro ao gerar obra"
+        showToast(msg, "error")
+      }
+    }
+  }
+
+  const handleGenerateInstallments = async (id: string) => {
+    const numStr = prompt("Quantas parcelas deseja gerar?", "4")
+    if (!numStr) return
+    const num = parseInt(numStr, 10)
+    if (isNaN(num) || num < 1 || num > 60) { showToast("Numero invalido (1-60)", "error"); return }
+    try {
+      const res = await contractsApi.generateInstallments(id, num)
+      showToast(res.data.message || `${num} parcelas geradas!`)
+      fetchData()
+    } catch (err) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Erro ao gerar parcelas"
+      showToast(msg, "error")
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm("Excluir este contrato?")) { await contractsApi.delete(id); fetchData() }
+    if (confirm("Excluir este contrato?")) {
+      try { await contractsApi.delete(id); showToast("Contrato excluido"); fetchData() } catch { showToast("Erro ao excluir", "error") }
+    }
   }
 
   const formatBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
@@ -85,7 +115,8 @@ export default function ContractsPage() {
                 <TableCell><Badge variant={STATUS_MAP[c.status]?.variant || "secondary"}>{STATUS_MAP[c.status]?.label || c.status}</Badge></TableCell>
                 <TableCell><div className="flex gap-1">
                   <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setForm({ title: c.title, client_id: c.client_id, scope_summary: "", total_value: c.total_value?.toString() || "", payment_conditions: "", installments_count: "4", start_date: c.start_date || "", end_date: c.end_date || "" }); setShowForm(true) }}><Pencil className="h-4 w-4" /></Button>
-                  {c.status === "ativo" && <Button variant="ghost" size="icon" onClick={() => handleGenerateProject(c.id)} title="Gerar Obra"><HardHat className="h-4 w-4 text-orange-600" /></Button>}
+                  <Button variant="ghost" size="icon" onClick={() => handleGenerateInstallments(c.id)} title="Gerar Parcelas"><Banknote className="h-4 w-4 text-green-600" /></Button>
+                  {(c.status === "ativo" || c.status === "rascunho") && <Button variant="ghost" size="icon" onClick={() => handleGenerateProject(c.id)} title="Gerar Obra"><HardHat className="h-4 w-4 text-orange-600" /></Button>}
                   <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                 </div></TableCell>
               </TableRow>

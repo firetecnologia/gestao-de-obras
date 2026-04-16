@@ -133,6 +133,7 @@ export const contractsApi = {
   addInstallment: (id: string, data: Record<string, unknown>) => api.post(`/contracts/${id}/installments`, data),
   updateInstallment: (contractId: string, installmentId: string, data: Record<string, unknown>) => api.put(`/contracts/${contractId}/installments/${installmentId}`, data),
   generateProject: (id: string, data: Record<string, unknown>) => api.post(`/contracts/${id}/generate-project`, data),
+  generateInstallments: (id: string, numInstallments: number) => api.post(`/contracts/${id}/generate-installments?num_installments=${numInstallments}`),
 }
 
 // Planning
