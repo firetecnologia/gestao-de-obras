@@ -25,8 +25,8 @@ async def list_clients(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(Client).where(not Client.is_deleted).options(selectinload(Client.contacts))
-    count_query = select(func.count()).select_from(Client).where(not Client.is_deleted)
+    query = select(Client).where(Client.is_deleted.is_(False)).options(selectinload(Client.contacts))
+    count_query = select(func.count()).select_from(Client).where(Client.is_deleted.is_(False))
 
     if search:
         search_filter = Client.name.ilike(f"%{search}%") | Client.cpf_cnpj.ilike(f"%{search}%") | Client.email.ilike(f"%{search}%")
@@ -54,7 +54,7 @@ async def create_client(
     current_user: User = Depends(get_current_user),
 ):
     if data.cpf_cnpj:
-        existing = await db.execute(select(Client).where(Client.cpf_cnpj == data.cpf_cnpj, not Client.is_deleted))
+        existing = await db.execute(select(Client).where(Client.cpf_cnpj == data.cpf_cnpj, Client.is_deleted.is_(False)))
         if existing.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="CPF/CNPJ já cadastrado")
 
@@ -77,7 +77,7 @@ async def create_client(
 @router.get("/{client_id}", response_model=ClientResponse)
 async def get_client(client_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(
-        select(Client).where(Client.id == client_id, not Client.is_deleted).options(selectinload(Client.contacts))
+        select(Client).where(Client.id == client_id, Client.is_deleted.is_(False)).options(selectinload(Client.contacts))
     )
     client = result.scalar_one_or_none()
     if not client:
@@ -90,7 +90,7 @@ async def update_client(
     client_id: str, data: ClientUpdate,
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(Client).where(Client.id == client_id, not Client.is_deleted))
+    result = await db.execute(select(Client).where(Client.id == client_id, Client.is_deleted.is_(False)))
     client = result.scalar_one_or_none()
     if not client:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
@@ -106,7 +106,7 @@ async def update_client(
 @router.delete("/{client_id}", response_model=MessageResponse)
 async def delete_client(client_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime, timezone
-    result = await db.execute(select(Client).where(Client.id == client_id, not Client.is_deleted))
+    result = await db.execute(select(Client).where(Client.id == client_id, Client.is_deleted.is_(False)))
     client = result.scalar_one_or_none()
     if not client:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
@@ -123,7 +123,7 @@ async def add_contact(
     client_id: str, data: ClientContactCreate,
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(Client).where(Client.id == client_id, not Client.is_deleted))
+    result = await db.execute(select(Client).where(Client.id == client_id, Client.is_deleted.is_(False)))
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     contact = ClientContact(**data.model_dump(), client_id=client_id)

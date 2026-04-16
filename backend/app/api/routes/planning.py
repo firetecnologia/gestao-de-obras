@@ -21,7 +21,7 @@ router = APIRouter(prefix="/planning", tags=["Planejamento / Cronograma"])
 @router.get("/projects/{project_id}/phases", response_model=list[WorkPhaseResponse])
 async def list_phases(project_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(
-        select(WorkPhase).where(WorkPhase.project_id == project_id, not WorkPhase.is_deleted)
+        select(WorkPhase).where(WorkPhase.project_id == project_id, WorkPhase.is_deleted.is_(False))
         .options(selectinload(WorkPhase.tasks).selectinload(WorkTask.dependencies))
         .order_by(WorkPhase.sort_order)
     )
@@ -52,7 +52,7 @@ async def list_phases(project_id: str, db: AsyncSession = Depends(get_db), curre
 
 @router.post("/phases", response_model=WorkPhaseResponse, status_code=status.HTTP_201_CREATED)
 async def create_phase(data: WorkPhaseCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Project).where(Project.id == data.project_id, not Project.is_deleted))
+    result = await db.execute(select(Project).where(Project.id == data.project_id, Project.is_deleted.is_(False)))
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Obra não encontrada")
     phase = WorkPhase(**data.model_dump())
@@ -70,7 +70,7 @@ async def create_phase(data: WorkPhaseCreate, db: AsyncSession = Depends(get_db)
 
 @router.put("/phases/{phase_id}", response_model=WorkPhaseResponse)
 async def update_phase(phase_id: str, data: WorkPhaseUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(WorkPhase).where(WorkPhase.id == phase_id, not WorkPhase.is_deleted))
+    result = await db.execute(select(WorkPhase).where(WorkPhase.id == phase_id, WorkPhase.is_deleted.is_(False)))
     phase = result.scalar_one_or_none()
     if not phase:
         raise HTTPException(status_code=404, detail="Fase não encontrada")
@@ -91,7 +91,7 @@ async def update_phase(phase_id: str, data: WorkPhaseUpdate, db: AsyncSession = 
 @router.delete("/phases/{phase_id}", response_model=MessageResponse)
 async def delete_phase(phase_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime, timezone
-    result = await db.execute(select(WorkPhase).where(WorkPhase.id == phase_id, not WorkPhase.is_deleted))
+    result = await db.execute(select(WorkPhase).where(WorkPhase.id == phase_id, WorkPhase.is_deleted.is_(False)))
     phase = result.scalar_one_or_none()
     if not phase:
         raise HTTPException(status_code=404, detail="Fase não encontrada")
@@ -105,7 +105,7 @@ async def delete_phase(phase_id: str, db: AsyncSession = Depends(get_db), curren
 
 @router.post("/phases/{phase_id}/tasks", response_model=WorkTaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(phase_id: str, data: WorkTaskCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(WorkPhase).where(WorkPhase.id == phase_id, not WorkPhase.is_deleted))
+    result = await db.execute(select(WorkPhase).where(WorkPhase.id == phase_id, WorkPhase.is_deleted.is_(False)))
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Fase não encontrada")
 
@@ -129,7 +129,7 @@ async def create_task(phase_id: str, data: WorkTaskCreate, db: AsyncSession = De
 
 @router.put("/tasks/{task_id}", response_model=WorkTaskResponse)
 async def update_task(task_id: str, data: WorkTaskUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(WorkTask).where(WorkTask.id == task_id, not WorkTask.is_deleted))
+    result = await db.execute(select(WorkTask).where(WorkTask.id == task_id, WorkTask.is_deleted.is_(False)))
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
@@ -149,7 +149,7 @@ async def update_task(task_id: str, data: WorkTaskUpdate, db: AsyncSession = Dep
 @router.delete("/tasks/{task_id}", response_model=MessageResponse)
 async def delete_task(task_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime, timezone
-    result = await db.execute(select(WorkTask).where(WorkTask.id == task_id, not WorkTask.is_deleted))
+    result = await db.execute(select(WorkTask).where(WorkTask.id == task_id, WorkTask.is_deleted.is_(False)))
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
@@ -164,7 +164,7 @@ async def delete_task(task_id: str, db: AsyncSession = Depends(get_db), current_
 @router.get("/projects/{project_id}/gantt")
 async def get_gantt_data(project_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(
-        select(WorkPhase).where(WorkPhase.project_id == project_id, not WorkPhase.is_deleted)
+        select(WorkPhase).where(WorkPhase.project_id == project_id, WorkPhase.is_deleted.is_(False))
         .options(selectinload(WorkPhase.tasks).selectinload(WorkTask.dependencies))
         .order_by(WorkPhase.sort_order)
     )

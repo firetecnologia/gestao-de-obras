@@ -16,7 +16,7 @@ router = APIRouter(prefix="/auth", tags=["Autenticação"])
 @router.post("/login", response_model=TokenResponse)
 async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(User).where(User.email == data.email, not User.is_deleted)
+        select(User).where(User.email == data.email, User.is_deleted.is_(False))
     )
     user = result.scalar_one_or_none()
     if not user or not verify_password(data.password, user.password_hash):
@@ -40,7 +40,7 @@ async def refresh_token(data: RefreshRequest, db: AsyncSession = Depends(get_db)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token inválido")
 
     user_id = payload.get("sub")
-    result = await db.execute(select(User).where(User.id == user_id, User.is_active, not User.is_deleted))
+    result = await db.execute(select(User).where(User.id == user_id, User.is_active, User.is_deleted.is_(False)))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado")

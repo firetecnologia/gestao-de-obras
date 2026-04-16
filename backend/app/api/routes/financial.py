@@ -35,8 +35,8 @@ async def list_entries(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(FinancialEntry).where(not FinancialEntry.is_deleted)
-    count_query = select(func.count()).select_from(FinancialEntry).where(not FinancialEntry.is_deleted)
+    query = select(FinancialEntry).where(FinancialEntry.is_deleted.is_(False))
+    count_query = select(func.count()).select_from(FinancialEntry).where(FinancialEntry.is_deleted.is_(False))
 
     if project_id:
         query = query.where(FinancialEntry.project_id == project_id)
@@ -97,7 +97,7 @@ async def create_entry(data: FinancialEntryCreate, db: AsyncSession = Depends(ge
 
 @router.put("/entries/{entry_id}", response_model=FinancialEntryResponse)
 async def update_entry(entry_id: str, data: FinancialEntryUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(FinancialEntry).where(FinancialEntry.id == entry_id, not FinancialEntry.is_deleted))
+    result = await db.execute(select(FinancialEntry).where(FinancialEntry.id == entry_id, FinancialEntry.is_deleted.is_(False)))
     entry = result.scalar_one_or_none()
     if not entry:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
@@ -116,7 +116,7 @@ async def update_entry(entry_id: str, data: FinancialEntryUpdate, db: AsyncSessi
 
 @router.delete("/entries/{entry_id}", response_model=MessageResponse)
 async def delete_entry(entry_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(FinancialEntry).where(FinancialEntry.id == entry_id, not FinancialEntry.is_deleted))
+    result = await db.execute(select(FinancialEntry).where(FinancialEntry.id == entry_id, FinancialEntry.is_deleted.is_(False)))
     entry = result.scalar_one_or_none()
     if not entry:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
@@ -134,7 +134,7 @@ async def financial_summary(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    base_filter = not FinancialEntry.is_deleted
+    base_filter = FinancialEntry.is_deleted.is_(False)
 
     # Revenue
     rev_query = select(

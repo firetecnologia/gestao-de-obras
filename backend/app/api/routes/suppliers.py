@@ -21,8 +21,8 @@ async def list_suppliers(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(Supplier).where(not Supplier.is_deleted)
-    count_query = select(func.count()).select_from(Supplier).where(not Supplier.is_deleted)
+    query = select(Supplier).where(Supplier.is_deleted.is_(False))
+    count_query = select(func.count()).select_from(Supplier).where(Supplier.is_deleted.is_(False))
 
     if search:
         sf = Supplier.name.ilike(f"%{search}%") | Supplier.cpf_cnpj.ilike(f"%{search}%")
@@ -54,7 +54,7 @@ async def create_supplier(data: SupplierCreate, db: AsyncSession = Depends(get_d
 
 @router.get("/{supplier_id}", response_model=SupplierResponse)
 async def get_supplier(supplier_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Supplier).where(Supplier.id == supplier_id, not Supplier.is_deleted))
+    result = await db.execute(select(Supplier).where(Supplier.id == supplier_id, Supplier.is_deleted.is_(False)))
     supplier = result.scalar_one_or_none()
     if not supplier:
         raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
@@ -63,7 +63,7 @@ async def get_supplier(supplier_id: str, db: AsyncSession = Depends(get_db), cur
 
 @router.put("/{supplier_id}", response_model=SupplierResponse)
 async def update_supplier(supplier_id: str, data: SupplierUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Supplier).where(Supplier.id == supplier_id, not Supplier.is_deleted))
+    result = await db.execute(select(Supplier).where(Supplier.id == supplier_id, Supplier.is_deleted.is_(False)))
     supplier = result.scalar_one_or_none()
     if not supplier:
         raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
@@ -77,7 +77,7 @@ async def update_supplier(supplier_id: str, data: SupplierUpdate, db: AsyncSessi
 @router.delete("/{supplier_id}", response_model=MessageResponse)
 async def delete_supplier(supplier_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime, timezone
-    result = await db.execute(select(Supplier).where(Supplier.id == supplier_id, not Supplier.is_deleted))
+    result = await db.execute(select(Supplier).where(Supplier.id == supplier_id, Supplier.is_deleted.is_(False)))
     supplier = result.scalar_one_or_none()
     if not supplier:
         raise HTTPException(status_code=404, detail="Fornecedor não encontrado")

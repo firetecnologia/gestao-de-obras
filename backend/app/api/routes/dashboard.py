@@ -21,32 +21,32 @@ async def executive_dashboard(db: AsyncSession = Depends(get_db), current_user: 
     # Active projects
     active = (await db.execute(
         select(func.count()).select_from(Project)
-        .where(not Project.is_deleted, Project.status.in_(["em_andamento", "planejamento"]))
+        .where(Project.is_deleted.is_(False), Project.status.in_(["em_andamento", "planejamento"]))
     )).scalar() or 0
 
     # Delayed projects
     delayed = (await db.execute(
         select(func.count()).select_from(Project)
-        .where(not Project.is_deleted, Project.status == "em_andamento",
+        .where(Project.is_deleted.is_(False), Project.status == "em_andamento",
                Project.planned_end < today, Project.actual_end.is_(None))
     )).scalar() or 0
 
     # Revenue planned
     revenue_planned = (await db.execute(
         select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0))
-        .where(not FinancialEntry.is_deleted, FinancialEntry.type == "receita")
+        .where(FinancialEntry.is_deleted.is_(False), FinancialEntry.type == "receita")
     )).scalar() or 0
 
     # Revenue received
     revenue_received = (await db.execute(
         select(func.coalesce(func.sum(FinancialEntry.actual_amount), 0))
-        .where(not FinancialEntry.is_deleted, FinancialEntry.type == "receita", FinancialEntry.status == "pago")
+        .where(FinancialEntry.is_deleted.is_(False), FinancialEntry.type == "receita", FinancialEntry.status == "pago")
     )).scalar() or 0
 
     # Total costs
     total_costs = (await db.execute(
         select(func.coalesce(func.sum(FinancialEntry.actual_amount), 0))
-        .where(not FinancialEntry.is_deleted, FinancialEntry.type == "despesa")
+        .where(FinancialEntry.is_deleted.is_(False), FinancialEntry.type == "despesa")
     )).scalar() or 0
 
     # Overdue installments
@@ -60,13 +60,13 @@ async def executive_dashboard(db: AsyncSession = Depends(get_db), current_user: 
     # Pipeline leads count
     pipeline = (await db.execute(
         select(func.count()).select_from(Lead)
-        .where(not Lead.is_deleted, Lead.status.notin_(["fechado_ganho", "fechado_perdido"]))
+        .where(Lead.is_deleted.is_(False), Lead.status.notin_(["fechado_ganho", "fechado_perdido"]))
     )).scalar() or 0
 
     # Contracts this month
     contracts_month = (await db.execute(
         select(func.count()).select_from(Contract)
-        .where(not Contract.is_deleted, Contract.created_at >= datetime(month_start.year, month_start.month, month_start.day, tzinfo=timezone.utc))
+        .where(Contract.is_deleted.is_(False), Contract.created_at >= datetime(month_start.year, month_start.month, month_start.day, tzinfo=timezone.utc))
     )).scalar() or 0
 
     return {
@@ -90,27 +90,27 @@ async def operational_dashboard(db: AsyncSession = Depends(get_db), current_user
     # Delayed tasks
     delayed_tasks = (await db.execute(
         select(func.count()).select_from(WorkTask)
-        .where(not WorkTask.is_deleted, WorkTask.status.in_(["nao_iniciada", "em_andamento"]),
+        .where(WorkTask.is_deleted.is_(False), WorkTask.status.in_(["nao_iniciada", "em_andamento"]),
                WorkTask.planned_end < today)
     )).scalar() or 0
 
     # Pending purchases
     pending_purchases = (await db.execute(
         select(func.count()).select_from(PurchaseRequest)
-        .where(not PurchaseRequest.is_deleted, PurchaseRequest.status.in_(["rascunho", "aguardando_aprovacao", "aprovada"]))
+        .where(PurchaseRequest.is_deleted.is_(False), PurchaseRequest.status.in_(["rascunho", "aguardando_aprovacao", "aprovada"]))
     )).scalar() or 0
 
     # Recent diaries (last 7 days)
     week_ago = today - timedelta(days=7)
     recent_diaries = (await db.execute(
         select(func.count()).select_from(WorkDiary)
-        .where(not WorkDiary.is_deleted, WorkDiary.date >= week_ago)
+        .where(WorkDiary.is_deleted.is_(False), WorkDiary.date >= week_ago)
     )).scalar() or 0
 
     # Projects by status
     project_status = await db.execute(
         select(Project.status, func.count())
-        .where(not Project.is_deleted)
+        .where(Project.is_deleted.is_(False))
         .group_by(Project.status)
     )
     project_status_dict = {row[0]: row[1] for row in project_status.all()}
@@ -118,7 +118,7 @@ async def operational_dashboard(db: AsyncSession = Depends(get_db), current_user
     # Lead pipeline
     lead_pipeline = await db.execute(
         select(Lead.status, func.count())
-        .where(not Lead.is_deleted)
+        .where(Lead.is_deleted.is_(False))
         .group_by(Lead.status)
     )
     lead_pipeline_dict = {row[0]: row[1] for row in lead_pipeline.all()}
@@ -126,7 +126,7 @@ async def operational_dashboard(db: AsyncSession = Depends(get_db), current_user
     # Phases with delays
     delayed_phases_result = await db.execute(
         select(WorkPhase.name, WorkPhase.planned_end, WorkPhase.project_id)
-        .where(not WorkPhase.is_deleted, WorkPhase.status.in_(["nao_iniciada", "em_andamento"]),
+        .where(WorkPhase.is_deleted.is_(False), WorkPhase.status.in_(["nao_iniciada", "em_andamento"]),
                WorkPhase.planned_end < today)
         .limit(10)
     )

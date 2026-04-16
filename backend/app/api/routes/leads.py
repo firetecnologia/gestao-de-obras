@@ -27,10 +27,10 @@ async def list_leads(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(Lead).where(not Lead.is_deleted).options(
+    query = select(Lead).where(Lead.is_deleted.is_(False)).options(
         selectinload(Lead.responsible), selectinload(Lead.interactions)
     )
-    count_query = select(func.count()).select_from(Lead).where(not Lead.is_deleted)
+    count_query = select(func.count()).select_from(Lead).where(Lead.is_deleted.is_(False))
 
     if search:
         sf = Lead.name.ilike(f"%{search}%") | Lead.email.ilike(f"%{search}%") | Lead.phone.ilike(f"%{search}%")
@@ -92,7 +92,7 @@ async def create_lead(data: LeadCreate, db: AsyncSession = Depends(get_db), curr
 @router.get("/{lead_id}", response_model=LeadResponse)
 async def get_lead(lead_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(
-        select(Lead).where(Lead.id == lead_id, not Lead.is_deleted)
+        select(Lead).where(Lead.id == lead_id, Lead.is_deleted.is_(False))
         .options(selectinload(Lead.responsible), selectinload(Lead.interactions))
     )
     lead_item = result.scalar_one_or_none()
@@ -117,7 +117,7 @@ async def get_lead(lead_id: str, db: AsyncSession = Depends(get_db), current_use
 
 @router.put("/{lead_id}", response_model=LeadResponse)
 async def update_lead(lead_id: str, data: LeadUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Lead).where(Lead.id == lead_id, not Lead.is_deleted))
+    result = await db.execute(select(Lead).where(Lead.id == lead_id, Lead.is_deleted.is_(False)))
     lead = result.scalar_one_or_none()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead não encontrado")
@@ -135,7 +135,7 @@ async def update_lead(lead_id: str, data: LeadUpdate, db: AsyncSession = Depends
 
 @router.delete("/{lead_id}", response_model=MessageResponse)
 async def delete_lead(lead_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Lead).where(Lead.id == lead_id, not Lead.is_deleted))
+    result = await db.execute(select(Lead).where(Lead.id == lead_id, Lead.is_deleted.is_(False)))
     lead = result.scalar_one_or_none()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead não encontrado")
@@ -147,10 +147,13 @@ async def delete_lead(lead_id: str, db: AsyncSession = Depends(get_db), current_
 
 @router.post("/{lead_id}/interactions", response_model=LeadInteractionResponse, status_code=status.HTTP_201_CREATED)
 async def add_interaction(lead_id: str, data: LeadInteractionCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Lead).where(Lead.id == lead_id, not Lead.is_deleted))
+    result = await db.execute(select(Lead).where(Lead.id == lead_id, Lead.is_deleted.is_(False)))
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Lead não encontrado")
-    interaction = LeadInteraction(**data.model_dump(), lead_id=lead_id, user_id=current_user.id)
+    interaction_data = data.model_dump()
+    if not interaction_data.get("date"):
+        interaction_data["date"] = datetime.now(timezone.utc)
+    interaction = LeadInteraction(**interaction_data, lead_id=lead_id, user_id=current_user.id)
     db.add(interaction)
     await db.flush()
     await db.refresh(interaction)
@@ -162,8 +165,10 @@ async def add_interaction(lead_id: str, data: LeadInteractionCreate, db: AsyncSe
 
 
 @router.post("/{lead_id}/convert", response_model=MessageResponse)
-async def convert_lead(lead_id: str, data: LeadConvertRequest, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Lead).where(Lead.id == lead_id, not Lead.is_deleted))
+async def convert_lead(lead_id: str, data: LeadConvertRequest = None, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if data is None:
+        data = LeadConvertRequest()
+    result = await db.execute(select(Lead).where(Lead.id == lead_id, Lead.is_deleted.is_(False)))
     lead = result.scalar_one_or_none()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead não encontrado")

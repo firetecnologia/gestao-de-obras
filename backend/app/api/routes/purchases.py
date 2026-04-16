@@ -32,8 +32,8 @@ async def list_requests(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(PurchaseRequest).where(not PurchaseRequest.is_deleted).options(selectinload(PurchaseRequest.items))
-    count_query = select(func.count()).select_from(PurchaseRequest).where(not PurchaseRequest.is_deleted)
+    query = select(PurchaseRequest).where(PurchaseRequest.is_deleted.is_(False)).options(selectinload(PurchaseRequest.items))
+    count_query = select(func.count()).select_from(PurchaseRequest).where(PurchaseRequest.is_deleted.is_(False))
 
     if project_id:
         query = query.where(PurchaseRequest.project_id == project_id)
@@ -83,7 +83,7 @@ async def create_request(data: PurchaseRequestCreate, db: AsyncSession = Depends
 
 @router.put("/requests/{request_id}", response_model=PurchaseRequestResponse)
 async def update_request(request_id: str, data: PurchaseRequestUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == request_id, not PurchaseRequest.is_deleted))
+    result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == request_id, PurchaseRequest.is_deleted.is_(False)))
     req = result.scalar_one_or_none()
     if not req:
         raise HTTPException(status_code=404, detail="Solicitação não encontrada")
@@ -98,7 +98,7 @@ async def update_request(request_id: str, data: PurchaseRequestUpdate, db: Async
 @router.delete("/requests/{request_id}", response_model=MessageResponse)
 async def delete_request(request_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime, timezone
-    result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == request_id, not PurchaseRequest.is_deleted))
+    result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.id == request_id, PurchaseRequest.is_deleted.is_(False)))
     req = result.scalar_one_or_none()
     if not req:
         raise HTTPException(status_code=404, detail="Solicitação não encontrada")
@@ -203,8 +203,8 @@ async def list_orders(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(PurchaseOrder).where(not PurchaseOrder.is_deleted).options(selectinload(PurchaseOrder.items))
-    count_query = select(func.count()).select_from(PurchaseOrder).where(not PurchaseOrder.is_deleted)
+    query = select(PurchaseOrder).where(PurchaseOrder.is_deleted.is_(False)).options(selectinload(PurchaseOrder.items))
+    count_query = select(func.count()).select_from(PurchaseOrder).where(PurchaseOrder.is_deleted.is_(False))
 
     if project_id:
         query = query.where(PurchaseOrder.project_id == project_id)
@@ -226,7 +226,7 @@ async def list_orders(
 
 @router.put("/orders/{order_id}", response_model=PurchaseOrderResponse)
 async def update_order(order_id: str, data: PurchaseOrderUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(PurchaseOrder).where(PurchaseOrder.id == order_id, not PurchaseOrder.is_deleted))
+    result = await db.execute(select(PurchaseOrder).where(PurchaseOrder.id == order_id, PurchaseOrder.is_deleted.is_(False)))
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")

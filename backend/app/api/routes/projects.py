@@ -24,10 +24,10 @@ async def list_projects(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(Project).where(not Project.is_deleted).options(
+    query = select(Project).where(Project.is_deleted.is_(False)).options(
         selectinload(Project.client), selectinload(Project.responsible)
     )
-    count_query = select(func.count()).select_from(Project).where(not Project.is_deleted)
+    count_query = select(func.count()).select_from(Project).where(Project.is_deleted.is_(False))
 
     if search:
         sf = Project.name.ilike(f"%{search}%") | Project.code.ilike(f"%{search}%")
@@ -72,7 +72,7 @@ async def list_projects(
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(data: ProjectCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     # Verify client exists
-    client_result = await db.execute(select(Client).where(Client.id == data.client_id, not Client.is_deleted))
+    client_result = await db.execute(select(Client).where(Client.id == data.client_id, Client.is_deleted.is_(False)))
     client = client_result.scalar_one_or_none()
     if not client:
         raise HTTPException(status_code=400, detail="Cliente não encontrado")
@@ -97,7 +97,7 @@ async def create_project(data: ProjectCreate, db: AsyncSession = Depends(get_db)
 @router.get("/{project_id}", response_model=ProjectResponse)
 async def get_project(project_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(
-        select(Project).where(Project.id == project_id, not Project.is_deleted)
+        select(Project).where(Project.id == project_id, Project.is_deleted.is_(False))
         .options(selectinload(Project.client), selectinload(Project.responsible))
     )
     p = result.scalar_one_or_none()
@@ -120,7 +120,7 @@ async def get_project(project_id: str, db: AsyncSession = Depends(get_db), curre
 
 @router.put("/{project_id}", response_model=ProjectResponse)
 async def update_project(project_id: str, data: ProjectUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Project).where(Project.id == project_id, not Project.is_deleted))
+    result = await db.execute(select(Project).where(Project.id == project_id, Project.is_deleted.is_(False)))
     project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(status_code=404, detail="Obra não encontrada")
@@ -144,7 +144,7 @@ async def update_project(project_id: str, data: ProjectUpdate, db: AsyncSession 
 @router.delete("/{project_id}", response_model=MessageResponse)
 async def delete_project(project_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime, timezone
-    result = await db.execute(select(Project).where(Project.id == project_id, not Project.is_deleted))
+    result = await db.execute(select(Project).where(Project.id == project_id, Project.is_deleted.is_(False)))
     project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(status_code=404, detail="Obra não encontrada")

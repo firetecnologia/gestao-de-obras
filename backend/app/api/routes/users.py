@@ -25,8 +25,8 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(User).where(not User.is_deleted)
-    count_query = select(func.count()).select_from(User).where(not User.is_deleted)
+    query = select(User).where(User.is_deleted.is_(False))
+    count_query = select(func.count()).select_from(User).where(User.is_deleted.is_(False))
 
     if search:
         query = query.where(User.name.ilike(f"%{search}%") | User.email.ilike(f"%{search}%"))
@@ -77,7 +77,7 @@ async def create_user(
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(user_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(User).where(User.id == user_id, not User.is_deleted))
+    result = await db.execute(select(User).where(User.id == user_id, User.is_deleted.is_(False)))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
@@ -93,7 +93,7 @@ async def update_user(
     user_id: str, data: UserUpdate,
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(User).where(User.id == user_id, not User.is_deleted))
+    result = await db.execute(select(User).where(User.id == user_id, User.is_deleted.is_(False)))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
@@ -114,7 +114,7 @@ async def update_user(
 @router.delete("/{user_id}", response_model=MessageResponse)
 async def delete_user(user_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime, timezone
-    result = await db.execute(select(User).where(User.id == user_id, not User.is_deleted))
+    result = await db.execute(select(User).where(User.id == user_id, User.is_deleted.is_(False)))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")

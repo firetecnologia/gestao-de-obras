@@ -26,7 +26,10 @@ ACTIONS = ["visualizar", "criar", "editar", "excluir", "aprovar", "exportar", "a
 
 async def seed():
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        # Use raw SQL to drop all tables with CASCADE to avoid circular FK issues
+        from sqlalchemy import text as sa_text
+        await conn.execute(sa_text("DROP SCHEMA public CASCADE"))
+        await conn.execute(sa_text("CREATE SCHEMA public"))
         await conn.run_sync(Base.metadata.create_all)
 
     async with async_session() as session:

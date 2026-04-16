@@ -24,10 +24,10 @@ async def list_diaries(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(WorkDiary).where(not WorkDiary.is_deleted).options(
+    query = select(WorkDiary).where(WorkDiary.is_deleted.is_(False)).options(
         selectinload(WorkDiary.photos), selectinload(WorkDiary.created_by_user)
     )
-    count_query = select(func.count()).select_from(WorkDiary).where(not WorkDiary.is_deleted)
+    count_query = select(func.count()).select_from(WorkDiary).where(WorkDiary.is_deleted.is_(False))
 
     if project_id:
         query = query.where(WorkDiary.project_id == project_id)
@@ -58,7 +58,7 @@ async def list_diaries(
 
 @router.post("", response_model=WorkDiaryResponse, status_code=status.HTTP_201_CREATED)
 async def create_diary(data: WorkDiaryCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Project).where(Project.id == data.project_id, not Project.is_deleted))
+    result = await db.execute(select(Project).where(Project.id == data.project_id, Project.is_deleted.is_(False)))
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Obra não encontrada")
 
@@ -78,7 +78,7 @@ async def create_diary(data: WorkDiaryCreate, db: AsyncSession = Depends(get_db)
 @router.get("/{diary_id}", response_model=WorkDiaryResponse)
 async def get_diary(diary_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(
-        select(WorkDiary).where(WorkDiary.id == diary_id, not WorkDiary.is_deleted)
+        select(WorkDiary).where(WorkDiary.id == diary_id, WorkDiary.is_deleted.is_(False))
         .options(selectinload(WorkDiary.photos), selectinload(WorkDiary.created_by_user))
     )
     d = result.scalar_one_or_none()
@@ -98,7 +98,7 @@ async def get_diary(diary_id: str, db: AsyncSession = Depends(get_db), current_u
 
 @router.put("/{diary_id}", response_model=WorkDiaryResponse)
 async def update_diary(diary_id: str, data: WorkDiaryUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(WorkDiary).where(WorkDiary.id == diary_id, not WorkDiary.is_deleted))
+    result = await db.execute(select(WorkDiary).where(WorkDiary.id == diary_id, WorkDiary.is_deleted.is_(False)))
     diary = result.scalar_one_or_none()
     if not diary:
         raise HTTPException(status_code=404, detail="Registro não encontrado")
@@ -117,7 +117,7 @@ async def update_diary(diary_id: str, data: WorkDiaryUpdate, db: AsyncSession = 
 @router.delete("/{diary_id}", response_model=MessageResponse)
 async def delete_diary(diary_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime, timezone
-    result = await db.execute(select(WorkDiary).where(WorkDiary.id == diary_id, not WorkDiary.is_deleted))
+    result = await db.execute(select(WorkDiary).where(WorkDiary.id == diary_id, WorkDiary.is_deleted.is_(False)))
     diary = result.scalar_one_or_none()
     if not diary:
         raise HTTPException(status_code=404, detail="Registro não encontrado")
@@ -135,7 +135,7 @@ async def upload_photo(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(WorkDiary).where(WorkDiary.id == diary_id, not WorkDiary.is_deleted))
+    result = await db.execute(select(WorkDiary).where(WorkDiary.id == diary_id, WorkDiary.is_deleted.is_(False)))
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Registro não encontrado")
 

@@ -6,7 +6,7 @@ from datetime import datetime
 class LeadInteractionBase(BaseModel):
     type: str
     description: Optional[str] = None
-    date: datetime
+    date: Optional[datetime] = None
 
 
 class LeadInteractionCreate(LeadInteractionBase):

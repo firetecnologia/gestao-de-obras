@@ -307,7 +307,7 @@ class Project(Base, TimestampMixin, SoftDeleteMixin):
     actual_start = Column(Date, nullable=True)
     actual_end = Column(Date, nullable=True)
     responsible_id = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=True)
-    contract_id = Column(UUID(as_uuid=False), ForeignKey("contracts.id"), nullable=True)
+    contract_id = Column(UUID(as_uuid=False), ForeignKey("contracts.id", use_alter=True, name="fk_projects_contract_id"), nullable=True)
     estimated_value = Column(Numeric(14, 2), nullable=True)
     notes = Column(Text, nullable=True)
 
@@ -329,7 +329,7 @@ class Proposal(Base, TimestampMixin, SoftDeleteMixin):
     code = Column(String(50), unique=True, nullable=True)
     lead_id = Column(UUID(as_uuid=False), ForeignKey("leads.id"), nullable=True)
     client_id = Column(UUID(as_uuid=False), ForeignKey("clients.id"), nullable=True)
-    project_id = Column(UUID(as_uuid=False), ForeignKey("projects.id"), nullable=True)
+    project_id = Column(UUID(as_uuid=False), ForeignKey("projects.id", use_alter=True, name="fk_proposals_project_id"), nullable=True)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     status = Column(String(50), nullable=False, default="rascunho")

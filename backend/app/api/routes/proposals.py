@@ -27,10 +27,10 @@ async def list_proposals(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(Proposal).where(not Proposal.is_deleted).options(
+    query = select(Proposal).where(Proposal.is_deleted.is_(False)).options(
         selectinload(Proposal.items), selectinload(Proposal.versions)
     )
-    count_query = select(func.count()).select_from(Proposal).where(not Proposal.is_deleted)
+    count_query = select(func.count()).select_from(Proposal).where(Proposal.is_deleted.is_(False))
 
     if search:
         sf = Proposal.title.ilike(f"%{search}%") | Proposal.code.ilike(f"%{search}%")
@@ -96,14 +96,19 @@ async def create_proposal(data: ProposalCreate, db: AsyncSession = Depends(get_d
     proposal = result.scalar_one()
     _calc_proposal_totals(proposal)
     await db.flush()
-    await db.refresh(proposal)
+    # Re-query to get fresh state with all relationships loaded
+    result = await db.execute(
+        select(Proposal).where(Proposal.id == proposal.id)
+        .options(selectinload(Proposal.items), selectinload(Proposal.versions))
+    )
+    proposal = result.scalar_one()
     return ProposalResponse.model_validate(proposal)
 
 
 @router.get("/{proposal_id}", response_model=ProposalResponse)
 async def get_proposal(proposal_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(
-        select(Proposal).where(Proposal.id == proposal_id, not Proposal.is_deleted)
+        select(Proposal).where(Proposal.id == proposal_id, Proposal.is_deleted.is_(False))
         .options(selectinload(Proposal.items), selectinload(Proposal.versions))
     )
     proposal = result.scalar_one_or_none()
@@ -115,7 +120,7 @@ async def get_proposal(proposal_id: str, db: AsyncSession = Depends(get_db), cur
 @router.put("/{proposal_id}", response_model=ProposalResponse)
 async def update_proposal(proposal_id: str, data: ProposalUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(
-        select(Proposal).where(Proposal.id == proposal_id, not Proposal.is_deleted)
+        select(Proposal).where(Proposal.id == proposal_id, Proposal.is_deleted.is_(False))
         .options(selectinload(Proposal.items), selectinload(Proposal.versions))
     )
     proposal = result.scalar_one_or_none()
@@ -125,14 +130,18 @@ async def update_proposal(proposal_id: str, data: ProposalUpdate, db: AsyncSessi
         setattr(proposal, field, value)
     _calc_proposal_totals(proposal)
     await db.flush()
-    await db.refresh(proposal)
+    result = await db.execute(
+        select(Proposal).where(Proposal.id == proposal_id)
+        .options(selectinload(Proposal.items), selectinload(Proposal.versions))
+    )
+    proposal = result.scalar_one()
     return ProposalResponse.model_validate(proposal)
 
 
 @router.delete("/{proposal_id}", response_model=MessageResponse)
 async def delete_proposal(proposal_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime, timezone
-    result = await db.execute(select(Proposal).where(Proposal.id == proposal_id, not Proposal.is_deleted))
+    result = await db.execute(select(Proposal).where(Proposal.id == proposal_id, Proposal.is_deleted.is_(False)))
     proposal = result.scalar_one_or_none()
     if not proposal:
         raise HTTPException(status_code=404, detail="Proposta não encontrada")
@@ -146,7 +155,7 @@ async def delete_proposal(proposal_id: str, db: AsyncSession = Depends(get_db), 
 
 @router.post("/{proposal_id}/items", response_model=ProposalItemResponse, status_code=status.HTTP_201_CREATED)
 async def add_item(proposal_id: str, data: ProposalItemCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Proposal).where(Proposal.id == proposal_id, not Proposal.is_deleted).options(selectinload(Proposal.items)))
+    result = await db.execute(select(Proposal).where(Proposal.id == proposal_id, Proposal.is_deleted.is_(False)).options(selectinload(Proposal.items)))
     proposal = result.scalar_one_or_none()
     if not proposal:
         raise HTTPException(status_code=404, detail="Proposta não encontrada")
@@ -202,7 +211,7 @@ async def delete_item(proposal_id: str, item_id: str, db: AsyncSession = Depends
 async def create_version(proposal_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     import json
     result = await db.execute(
-        select(Proposal).where(Proposal.id == proposal_id, not Proposal.is_deleted)
+        select(Proposal).where(Proposal.id == proposal_id, Proposal.is_deleted.is_(False))
         .options(selectinload(Proposal.items), selectinload(Proposal.versions))
     )
     proposal = result.scalar_one_or_none()
@@ -233,7 +242,7 @@ async def create_version(proposal_id: str, db: AsyncSession = Depends(get_db), c
 async def approve_proposal(proposal_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime, timezone
     result = await db.execute(
-        select(Proposal).where(Proposal.id == proposal_id, not Proposal.is_deleted)
+        select(Proposal).where(Proposal.id == proposal_id, Proposal.is_deleted.is_(False))
         .options(selectinload(Proposal.items))
     )
     proposal = result.scalar_one_or_none()
@@ -249,7 +258,7 @@ async def approve_proposal(proposal_id: str, db: AsyncSession = Depends(get_db),
 
 @router.post("/{proposal_id}/generate-contract", response_model=MessageResponse)
 async def generate_contract(proposal_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Proposal).where(Proposal.id == proposal_id, not Proposal.is_deleted))
+    result = await db.execute(select(Proposal).where(Proposal.id == proposal_id, Proposal.is_deleted.is_(False)))
     proposal = result.scalar_one_or_none()
     if not proposal:
         raise HTTPException(status_code=404, detail="Proposta não encontrada")
