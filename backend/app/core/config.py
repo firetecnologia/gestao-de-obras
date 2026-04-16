@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@db:5432/gestao_obras"
-    DATABASE_URL_SYNC: str = "postgresql://postgres:postgres@db:5432/gestao_obras"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./gestao_obras.db"
+    DATABASE_URL_SYNC: str = ""
 
     # Auth
     SECRET_KEY: str = "super-secret-key-change-in-production"
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # File uploads
-    UPLOAD_DIR: str = "/app/uploads"
+    UPLOAD_DIR: str = "./uploads"
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
 
     # CORS

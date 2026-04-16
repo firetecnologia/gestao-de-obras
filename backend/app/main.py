@@ -68,3 +68,10 @@ async def healthz():
 @app.get("/api")
 async def api_root():
     return {"name": settings.APP_NAME, "version": settings.APP_VERSION, "docs": "/docs"}
+
+
+@app.post("/api/seed")
+async def run_seed():
+    from app.seeds import seed
+    await seed()
+    return {"status": "ok", "message": "Seeds executados com sucesso"}

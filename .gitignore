@@ -31,3 +31,10 @@ Thumbs.db
 
 # Uploads
 uploads/
+backend/.env
+backend/.env.deploy
+backend/.env.pg.bak
+backend/gestao_obras.db
+backend/gestao_obras.db-shm
+backend/gestao_obras.db-wal
+frontend/.env
