@@ -419,8 +419,8 @@ export default function ProposalDetailPage() {
   const materialSubtotalPrice = materials.reduce((sum, m) => sum + (Number(m.total_price) || 0), 0)
   const serviceSubtotalCost = services.reduce((sum, s) => sum + (Number(s.total_cost) || 0), 0)
   const serviceSubtotalPrice = services.reduce((sum, s) => sum + (Number(s.total_price) || 0), 0)
-  const additiveSubtotalCost = additives.reduce((sum, a) => sum + (Number(a.total_cost) || 0), 0)
-  const additiveSubtotalPrice = additives.reduce((sum, a) => sum + (Number(a.total_price) || 0), 0)
+  const additiveSubtotalCost = additives.filter(a => a.status === "aprovado").reduce((sum, a) => sum + (Number(a.total_cost) || 0), 0)
+  const additiveSubtotalPrice = additives.filter(a => a.status === "aprovado").reduce((sum, a) => sum + (Number(a.total_price) || 0), 0)
 
   // ==================== RENDER ====================
 

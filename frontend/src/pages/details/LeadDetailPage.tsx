@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -37,6 +37,7 @@ interface Proposal {
 
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [lead, setLead] = useState<Lead | null>(null)
   const [proposals, setProposals] = useState<Proposal[]>([])
   const [loading, setLoading] = useState(true)
@@ -180,7 +181,7 @@ export default function LeadDetailPage() {
                 {proposals.length === 0 ? (
                   <TableRow><TableCell colSpan={4} className="text-center py-8 text-slate-500">Nenhuma proposta vinculada</TableCell></TableRow>
                 ) : proposals.map((p) => (
-                  <TableRow key={p.id} className="cursor-pointer hover:bg-slate-50" onClick={() => window.location.href = "/proposals/" + p.id}>
+                  <TableRow key={p.id} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate("/proposals/" + p.id)}>
                     <TableCell className="font-mono text-sm">{p.code}</TableCell>
                     <TableCell className="font-medium">{p.title}</TableCell>
                     <TableCell><StatusBadge status={p.status} /></TableCell>

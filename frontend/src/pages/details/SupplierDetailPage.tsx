@@ -13,7 +13,7 @@ import { Mail, Phone, Building2, MapPin } from "lucide-react"
 
 interface Supplier {
   id: string; name: string; company_name?: string; cpf_cnpj?: string
-  email?: string; phone?: string; category?: string
+  email?: string; phone?: string; specialty?: string
   address_city?: string; address_state?: string
   notes?: string; created_at?: string
 }
@@ -51,7 +51,7 @@ export default function SupplierDetailPage() {
     <div className="space-y-4">
       <DetailPageHeader
         title={supplier.name}
-        subtitle={supplier.category || supplier.company_name || ""}
+        subtitle={supplier.specialty || supplier.company_name || ""}
         breadcrumbs={[
           { label: "Fornecedores", href: "/suppliers" },
           { label: supplier.name },
@@ -66,7 +66,7 @@ export default function SupplierDetailPage() {
 
         <TabsContent value="resumo">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <InfoCard label="Categoria" value={supplier.category || "-"} />
+            <InfoCard label="Especialidade" value={supplier.specialty || "-"} />
             <InfoCard label="CPF/CNPJ" value={supplier.cpf_cnpj || "-"} />
             <InfoCard label="Pedidos" value={String(orders.length)} />
             <InfoCard label="Criado em" value={formatDateBR(supplier.created_at)} />
