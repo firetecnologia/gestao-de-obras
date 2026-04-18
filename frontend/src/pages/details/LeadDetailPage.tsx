@@ -42,6 +42,7 @@ export default function LeadDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showInteraction, setShowInteraction] = useState(false)
   const [interactionForm, setInteractionForm] = useState({ type: "ligacao", description: "" })
+  const [activeTab, setActiveTab] = useState("resumo")
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -99,7 +100,7 @@ export default function LeadDetailPage() {
         }
       />
 
-      <Tabs defaultValue="resumo">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="interacoes">Interacoes ({lead.interactions?.length || 0})</TabsTrigger>

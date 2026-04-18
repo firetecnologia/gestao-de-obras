@@ -31,6 +31,7 @@ export default function ProjectDetailPage() {
   const [financial, setFinancial] = useState<Array<Record<string, unknown>>>([])
   const [diary, setDiary] = useState<Array<Record<string, unknown>>>([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("resumo")
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -74,7 +75,7 @@ export default function ProjectDetailPage() {
         actions={<StatusBadge status={project.status} />}
       />
 
-      <Tabs defaultValue="resumo">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="cronograma">Cronograma ({phases.length})</TabsTrigger>
@@ -169,7 +170,7 @@ export default function ProjectDetailPage() {
                     <div>
                       <p className="text-sm font-medium">{formatDateBR(d.date as string)}</p>
                       <p className="text-sm text-slate-600 mt-1">{String(d.description || "")}</p>
-                      {d.weather && <p className="text-xs text-slate-400 mt-1">Clima: {String(d.weather)}</p>}
+                      {d.weather ? <p className="text-xs text-slate-400 mt-1">Clima: {String(d.weather)}</p> : null}
                     </div>
                   </div>
                 </CardContent>

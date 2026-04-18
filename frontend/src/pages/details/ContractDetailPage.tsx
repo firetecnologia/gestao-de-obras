@@ -29,6 +29,7 @@ export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [contract, setContract] = useState<Contract | null>(null)
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("resumo")
   const { showToast } = useToast()
 
   const fetchData = useCallback(async () => {
@@ -103,7 +104,7 @@ export default function ContractDetailPage() {
         }
       />
 
-      <Tabs defaultValue="resumo">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="parcelas">Parcelas ({contract.installments?.length || 0})</TabsTrigger>

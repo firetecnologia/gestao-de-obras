@@ -27,6 +27,7 @@ export default function ClientDetailPage() {
   const [contracts, setContracts] = useState<Array<Record<string, unknown>>>([])
   const [projects, setProjects] = useState<Array<Record<string, unknown>>>([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("resumo")
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function ClientDetailPage() {
         }
       />
 
-      <Tabs defaultValue="resumo">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="obras">Obras ({projects.length})</TabsTrigger>

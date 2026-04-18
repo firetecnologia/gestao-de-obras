@@ -34,6 +34,7 @@ export default function ProposalDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showItemForm, setShowItemForm] = useState(false)
   const [itemForm, setItemForm] = useState({ description: "", unit: "un", quantity: "1", unit_cost: "" })
+  const [activeTab, setActiveTab] = useState("resumo")
   const { showToast } = useToast()
 
   const fetchData = useCallback(async () => {
@@ -130,7 +131,7 @@ export default function ProposalDetailPage() {
         }
       />
 
-      <Tabs defaultValue="resumo">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="itens">Itens ({proposal.items?.length || 0})</TabsTrigger>
