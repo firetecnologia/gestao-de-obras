@@ -75,7 +75,7 @@ function InlineEditableRow({
   onDelete,
 }: {
   item: Record<string, unknown>
-  columns: Array<{ key: string; label: string; type?: string }>
+  columns: Array<{ key: string; label: string; type?: "text" | "number" | "currency" }>
   onSave: (id: string, data: Record<string, unknown>) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }) {
@@ -94,14 +94,16 @@ function InlineEditableRow({
     setEditing(false)
   }
 
+  const isNumeric = (t?: string) => t === "number" || t === "currency"
+
   if (editing) {
     return (
       <TableRow className="bg-orange-50">
         {columns.map((col) => (
           <TableCell key={col.key} className="py-1 px-2">
             <Input
-              type={col.type === "number" ? "number" : "text"}
-              step={col.type === "number" ? "0.01" : undefined}
+              type={isNumeric(col.type) ? "number" : "text"}
+              step={isNumeric(col.type) ? "0.01" : undefined}
               value={String(formData[col.key] ?? "")}
               onChange={(e) => setFormData({ ...formData, [col.key]: e.target.value })}
               className="h-8 text-xs"
@@ -122,11 +124,18 @@ function InlineEditableRow({
     )
   }
 
+  const formatCell = (col: { key: string; type?: string }) => {
+    const val = item[col.key]
+    if (col.type === "currency") return formatBRL(val as number)
+    if (col.type === "number") return val != null ? String(val) : "-"
+    return String(val ?? "-")
+  }
+
   return (
     <TableRow className="hover:bg-slate-50">
       {columns.map((col) => (
         <TableCell key={col.key} className="text-sm py-2 px-2">
-          {col.type === "number" ? formatBRL(item[col.key] as number) : String(item[col.key] ?? "-")}
+          {formatCell(col)}
         </TableCell>
       ))}
       <TableCell className="py-2 px-2">
@@ -418,32 +427,32 @@ export default function ProposalDetailPage() {
   if (loading) return <div className="flex items-center justify-center py-20"><p className="text-slate-500">Carregando...</p></div>
   if (!proposal) return <div className="flex items-center justify-center py-20"><p className="text-slate-500">Proposta nao encontrada</p></div>
 
-  const materialColumns = [
+  const materialColumns: Array<{ key: string; label: string; type?: "text" | "number" | "currency" }> = [
     { key: "description", label: "Descricao" },
     { key: "unit", label: "Unid." },
     { key: "quantity", label: "Qtd", type: "number" },
-    { key: "unit_cost", label: "Custo Unit.", type: "number" },
-    { key: "unit_price", label: "Preco Unit.", type: "number" },
+    { key: "unit_cost", label: "Custo Unit.", type: "currency" },
+    { key: "unit_price", label: "Preco Unit.", type: "currency" },
     { key: "category", label: "Categoria" },
     { key: "supplier_name", label: "Fornecedor" },
   ]
 
-  const serviceColumns = [
+  const serviceColumns: Array<{ key: string; label: string; type?: "text" | "number" | "currency" }> = [
     { key: "description", label: "Descricao" },
     { key: "unit", label: "Unid." },
     { key: "quantity", label: "Qtd", type: "number" },
-    { key: "unit_cost", label: "Custo Unit.", type: "number" },
-    { key: "unit_price", label: "Preco Unit.", type: "number" },
+    { key: "unit_cost", label: "Custo Unit.", type: "currency" },
+    { key: "unit_price", label: "Preco Unit.", type: "currency" },
     { key: "stage", label: "Etapa" },
     { key: "sub_stage", label: "Sub-etapa" },
   ]
 
-  const additiveColumns = [
+  const additiveColumns: Array<{ key: string; label: string; type?: "text" | "number" | "currency" }> = [
     { key: "description", label: "Descricao" },
     { key: "unit", label: "Unid." },
     { key: "quantity", label: "Qtd", type: "number" },
-    { key: "unit_cost", label: "Custo Unit.", type: "number" },
-    { key: "unit_price", label: "Preco Unit.", type: "number" },
+    { key: "unit_cost", label: "Custo Unit.", type: "currency" },
+    { key: "unit_price", label: "Preco Unit.", type: "currency" },
     { key: "status", label: "Status" },
     { key: "responsible", label: "Responsavel" },
   ]

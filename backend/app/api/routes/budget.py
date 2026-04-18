@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from typing import Optional
 from decimal import Decimal
@@ -304,11 +305,15 @@ async def get_header(proposal_id: str, db: AsyncSession = Depends(get_db), curre
     result = await db.execute(select(ProposalHeader).where(ProposalHeader.proposal_id == proposal_id))
     header = result.scalar_one_or_none()
     if not header:
-        # Return empty header
-        header = ProposalHeader(proposal_id=proposal_id)
-        db.add(header)
-        await db.flush()
-        await db.refresh(header)
+        try:
+            header = ProposalHeader(proposal_id=proposal_id)
+            db.add(header)
+            await db.flush()
+            await db.refresh(header)
+        except IntegrityError:
+            await db.rollback()
+            result = await db.execute(select(ProposalHeader).where(ProposalHeader.proposal_id == proposal_id))
+            header = result.scalar_one()
     return ProposalHeaderResponse.model_validate(header)
 
 
@@ -528,10 +533,15 @@ async def get_commercial_terms(proposal_id: str, db: AsyncSession = Depends(get_
     result = await db.execute(select(ProposalCommercialTerms).where(ProposalCommercialTerms.proposal_id == proposal_id))
     terms = result.scalar_one_or_none()
     if not terms:
-        terms = ProposalCommercialTerms(proposal_id=proposal_id)
-        db.add(terms)
-        await db.flush()
-        await db.refresh(terms)
+        try:
+            terms = ProposalCommercialTerms(proposal_id=proposal_id)
+            db.add(terms)
+            await db.flush()
+            await db.refresh(terms)
+        except IntegrityError:
+            await db.rollback()
+            result = await db.execute(select(ProposalCommercialTerms).where(ProposalCommercialTerms.proposal_id == proposal_id))
+            terms = result.scalar_one()
     return ProposalCommercialTermsResponse.model_validate(terms)
 
 
