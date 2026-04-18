@@ -10,6 +10,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { contractsApi, clientsApi } from "@/services/api"
 import { useToast } from "@/components/ui/toast"
+import { useNavigate } from "react-router-dom"
+import { formatBRL } from "@/lib/format"
 import { Plus, Search, Pencil, Trash2, HardHat, Banknote } from "lucide-react"
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "info" | "success" | "warning" | "destructive" | "secondary" }> = {
@@ -33,6 +35,7 @@ export default function ContractsPage() {
   const [editing, setEditing] = useState<Contract | null>(null)
   const [form, setForm] = useState({ title: "", client_id: "", scope_summary: "", total_value: "", payment_conditions: "4 parcelas mensais", installments_count: "4", start_date: "", end_date: "" })
   const { showToast } = useToast()
+  const navigate = useNavigate()
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -90,8 +93,6 @@ export default function ContractsPage() {
     }
   }
 
-  const formatBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -106,7 +107,7 @@ export default function ContractsPage() {
             {loading ? <TableRow><TableCell colSpan={7} className="text-center py-8">Carregando...</TableCell></TableRow>
             : contracts.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center py-8 text-slate-500">Nenhum contrato</TableCell></TableRow>
             : contracts.map((c) => (
-              <TableRow key={c.id}>
+              <TableRow key={c.id} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate("/contracts/" + c.id)}>
                 <TableCell className="font-mono text-sm">{c.code}</TableCell>
                 <TableCell className="font-medium">{c.title}</TableCell>
                 <TableCell>{c.client_name || "-"}</TableCell>

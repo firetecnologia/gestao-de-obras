@@ -17,6 +17,12 @@ import DiaryPage from "@/pages/DiaryPage"
 import FinancialPage from "@/pages/FinancialPage"
 import DocumentsPage from "@/pages/DocumentsPage"
 import UsersPage from "@/pages/UsersPage"
+import LeadDetailPage from "@/pages/details/LeadDetailPage"
+import ClientDetailPage from "@/pages/details/ClientDetailPage"
+import ProposalDetailPage from "@/pages/details/ProposalDetailPage"
+import ContractDetailPage from "@/pages/details/ContractDetailPage"
+import ProjectDetailPage from "@/pages/details/ProjectDetailPage"
+import SupplierDetailPage from "@/pages/details/SupplierDetailPage"
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -33,11 +39,17 @@ function App() {
             <Route element={<AppLayout />}>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/clients" element={<ClientsPage />} />
+              <Route path="/clients/:id" element={<ClientDetailPage />} />
               <Route path="/leads" element={<LeadsPage />} />
+              <Route path="/leads/:id" element={<LeadDetailPage />} />
               <Route path="/suppliers" element={<SuppliersPage />} />
+              <Route path="/suppliers/:id" element={<SupplierDetailPage />} />
               <Route path="/projects" element={<ProjectsPage />} />
+              <Route path="/projects/:id" element={<ProjectDetailPage />} />
               <Route path="/proposals" element={<ProposalsPage />} />
+              <Route path="/proposals/:id" element={<ProposalDetailPage />} />
               <Route path="/contracts" element={<ContractsPage />} />
+              <Route path="/contracts/:id" element={<ContractDetailPage />} />
               <Route path="/planning" element={<PlanningPage />} />
               <Route path="/purchases" element={<PurchasesPage />} />
               <Route path="/diary" element={<DiaryPage />} />

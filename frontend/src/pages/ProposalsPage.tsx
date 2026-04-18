@@ -10,6 +10,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { proposalsApi, clientsApi } from "@/services/api"
 import { useToast } from "@/components/ui/toast"
+import { useNavigate } from "react-router-dom"
+import { formatBRL } from "@/lib/format"
 import { Plus, Search, Pencil, Trash2, CheckCircle, FileSignature } from "lucide-react"
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "info" | "success" | "warning" | "destructive" | "secondary" }> = {
@@ -34,6 +36,7 @@ export default function ProposalsPage() {
   const [editing, setEditing] = useState<Proposal | null>(null)
   const [form, setForm] = useState({ title: "", client_id: "", description: "", markup_percent: "30", status: "rascunho" })
   const { showToast } = useToast()
+  const navigate = useNavigate()
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -81,8 +84,6 @@ export default function ProposalsPage() {
     }
   }
 
-  const formatBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -97,7 +98,7 @@ export default function ProposalsPage() {
             {loading ? <TableRow><TableCell colSpan={7} className="text-center py-8">Carregando...</TableCell></TableRow>
             : proposals.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center py-8 text-slate-500">Nenhuma proposta</TableCell></TableRow>
             : proposals.map((p) => (
-              <TableRow key={p.id}>
+              <TableRow key={p.id} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate("/proposals/" + p.id)}>
                 <TableCell className="font-mono text-sm">{p.code}</TableCell>
                 <TableCell className="font-medium">{p.title}</TableCell>
                 <TableCell>{p.client_name || "-"}</TableCell>

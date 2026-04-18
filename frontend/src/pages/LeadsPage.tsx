@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { leadsApi } from "@/services/api"
+import { useToast } from "@/components/ui/toast"
+import { useNavigate } from "react-router-dom"
 import { Plus, Search, Pencil, Trash2, UserPlus } from "lucide-react"
 
 const STATUS_LABELS: Record<string, string> = {
@@ -33,11 +35,13 @@ export default function LeadsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Lead | null>(null)
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", source: "site", status: "novo", notes: "" })
+  const { showToast } = useToast()
+  const navigate = useNavigate()
 
   const fetchLeads = useCallback(async () => {
     setLoading(true)
-    try { const res = await leadsApi.list({ search, page_size: 50 }); setLeads(res.data.items) } catch { /* empty */ } finally { setLoading(false) }
-  }, [search])
+    try { const res = await leadsApi.list({ search, page_size: 50 }); setLeads(res.data.items) } catch { showToast("Erro ao carregar leads", "error") } finally { setLoading(false) }
+  }, [search, showToast])
 
   useEffect(() => { fetchLeads() }, [fetchLeads])
 
@@ -45,17 +49,18 @@ export default function LeadsPage() {
     try {
       if (editing) { await leadsApi.update(editing.id, form) } else { await leadsApi.create(form) }
       setShowForm(false); setEditing(null); fetchLeads()
-    } catch { /* empty */ }
+      showToast(editing ? "Lead atualizado" : "Lead criado")
+    } catch { showToast("Erro ao salvar lead", "error") }
   }
 
   const handleConvert = async (id: string) => {
     if (confirm("Converter este lead em cliente?")) {
-      try { await leadsApi.convert(id); fetchLeads() } catch { /* empty */ }
+      try { await leadsApi.convert(id); showToast("Lead convertido em cliente!"); fetchLeads() } catch { showToast("Erro ao converter lead", "error") }
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm("Excluir este lead?")) { await leadsApi.delete(id); fetchLeads() }
+    if (confirm("Excluir este lead?")) { try { await leadsApi.delete(id); showToast("Lead excluido"); fetchLeads() } catch { showToast("Erro ao excluir", "error") } }
   }
 
   return (
@@ -91,7 +96,7 @@ export default function LeadsPage() {
               ) : leads.length === 0 ? (
                 <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-500">Nenhum lead encontrado</TableCell></TableRow>
               ) : leads.map((l) => (
-                <TableRow key={l.id}>
+                <TableRow key={l.id} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate("/leads/" + l.id)}>
                   <TableCell className="font-medium">{l.name}</TableCell>
                   <TableCell>{l.company || "-"}</TableCell>
                   <TableCell><div className="text-sm">{l.email}</div><div className="text-xs text-slate-500">{l.phone}</div></TableCell>

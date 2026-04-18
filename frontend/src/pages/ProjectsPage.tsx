@@ -9,6 +9,9 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { projectsApi, clientsApi } from "@/services/api"
+import { useToast } from "@/components/ui/toast"
+import { useNavigate } from "react-router-dom"
+import { formatBRL } from "@/lib/format"
 import { Plus, Search, Pencil, Trash2 } from "lucide-react"
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "info" | "success" | "warning" | "destructive" | "secondary" }> = {
@@ -38,14 +41,16 @@ export default function ProjectsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Project | null>(null)
   const [form, setForm] = useState({ name: "", client_id: "", type: "reforma_residencial", status: "rascunho", description: "", address_street: "", address_city: "", address_state: "", area_m2: "", planned_start: "", planned_end: "" })
+  const { showToast } = useToast()
+  const navigate = useNavigate()
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       const [pRes, cRes] = await Promise.all([projectsApi.list({ search, page_size: 50 }), clientsApi.list({ page_size: 100 })])
       setProjects(pRes.data.items); setClients(cRes.data.items)
-    } catch { /* empty */ } finally { setLoading(false) }
-  }, [search])
+    } catch { showToast("Erro ao carregar obras", "error") } finally { setLoading(false) }
+  }, [search, showToast])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -53,15 +58,13 @@ export default function ProjectsPage() {
     try {
       const data = { ...form, area_m2: form.area_m2 ? Number(form.area_m2) : undefined, planned_start: form.planned_start || undefined, planned_end: form.planned_end || undefined }
       if (editing) { await projectsApi.update(editing.id, data) } else { await projectsApi.create(data) }
-      setShowForm(false); setEditing(null); fetchData()
-    } catch { /* empty */ }
+      setShowForm(false); setEditing(null); showToast(editing ? "Obra atualizada" : "Obra criada"); fetchData()
+    } catch { showToast("Erro ao salvar obra", "error") }
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm("Excluir esta obra?")) { await projectsApi.delete(id); fetchData() }
+    if (confirm("Excluir esta obra?")) { try { await projectsApi.delete(id); showToast("Obra excluida"); fetchData() } catch { showToast("Erro ao excluir", "error") } }
   }
-
-  const formatBRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
 
   return (
     <div className="space-y-4">
@@ -77,7 +80,7 @@ export default function ProjectsPage() {
             {loading ? <TableRow><TableCell colSpan={8} className="text-center py-8">Carregando...</TableCell></TableRow>
             : projects.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center py-8 text-slate-500">Nenhuma obra</TableCell></TableRow>
             : projects.map((p) => (
-              <TableRow key={p.id}>
+              <TableRow key={p.id} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate("/projects/" + p.id)}>
                 <TableCell className="font-mono text-sm">{p.code}</TableCell>
                 <TableCell className="font-medium">{p.name}</TableCell>
                 <TableCell>{p.client_name || "-"}</TableCell>

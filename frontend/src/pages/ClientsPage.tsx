@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { clientsApi } from "@/services/api"
+import { useToast } from "@/components/ui/toast"
+import { useNavigate } from "react-router-dom"
 import { Plus, Search, Pencil, Trash2, Building2, User } from "lucide-react"
 
 interface Client {
@@ -32,14 +34,16 @@ export default function ClientsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Client | null>(null)
   const [form, setForm] = useState({ person_type: "fisica", name: "", company_name: "", cpf_cnpj: "", email: "", phone: "", address_street: "", address_number: "", address_city: "", address_state: "", address_zip: "", notes: "" })
+  const { showToast } = useToast()
+  const navigate = useNavigate()
 
   const fetchClients = useCallback(async () => {
     setLoading(true)
     try {
       const res = await clientsApi.list({ search, page_size: 50 })
       setClients(res.data.items)
-    } catch { /* empty */ } finally { setLoading(false) }
-  }, [search])
+    } catch { showToast("Erro ao carregar clientes", "error") } finally { setLoading(false) }
+  }, [search, showToast])
 
   useEffect(() => { fetchClients() }, [fetchClients])
 
@@ -53,8 +57,9 @@ export default function ClientsPage() {
       setShowForm(false)
       setEditing(null)
       setForm({ person_type: "fisica", name: "", company_name: "", cpf_cnpj: "", email: "", phone: "", address_street: "", address_number: "", address_city: "", address_state: "", address_zip: "", notes: "" })
+      showToast(editing ? "Cliente atualizado" : "Cliente criado")
       fetchClients()
-    } catch { /* empty */ }
+    } catch { showToast("Erro ao salvar cliente", "error") }
   }
 
   const handleEdit = (client: Client) => {
@@ -106,7 +111,7 @@ export default function ClientsPage() {
               ) : clients.length === 0 ? (
                 <TableRow><TableCell colSpan={7} className="text-center py-8 text-slate-500">Nenhum cliente encontrado</TableCell></TableRow>
               ) : clients.map((c) => (
-                <TableRow key={c.id}>
+                <TableRow key={c.id} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate("/clients/" + c.id)}>
                   <TableCell>
                     <Badge variant={c.person_type === "fisica" ? "info" : "secondary"}>
                       {c.person_type === "fisica" ? <User className="h-3 w-3 mr-1" /> : <Building2 className="h-3 w-3 mr-1" />}
