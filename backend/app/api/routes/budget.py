@@ -358,6 +358,7 @@ async def add_material(proposal_id: str, data: ProposalMaterialItemCreate, db: A
 
 @budget_router.put("/materials/{item_id}", response_model=ProposalMaterialItemResponse)
 async def update_material_item(proposal_id: str, item_id: str, data: ProposalMaterialItemUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await _get_proposal(proposal_id, db)
     result = await db.execute(select(ProposalMaterialItem).where(ProposalMaterialItem.id == item_id, ProposalMaterialItem.proposal_id == proposal_id))
     item = result.scalar_one_or_none()
     if not item:
@@ -372,6 +373,7 @@ async def update_material_item(proposal_id: str, item_id: str, data: ProposalMat
 
 @budget_router.delete("/materials/{item_id}", response_model=MessageResponse)
 async def delete_material_item(proposal_id: str, item_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await _get_proposal(proposal_id, db)
     result = await db.execute(select(ProposalMaterialItem).where(ProposalMaterialItem.id == item_id, ProposalMaterialItem.proposal_id == proposal_id))
     item = result.scalar_one_or_none()
     if not item:
@@ -406,6 +408,7 @@ async def add_service_item(proposal_id: str, data: ProposalServiceItemCreate, db
 
 @budget_router.put("/services/{item_id}", response_model=ProposalServiceItemResponse)
 async def update_service_item(proposal_id: str, item_id: str, data: ProposalServiceItemUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await _get_proposal(proposal_id, db)
     result = await db.execute(select(ProposalServiceItem).where(ProposalServiceItem.id == item_id, ProposalServiceItem.proposal_id == proposal_id))
     item = result.scalar_one_or_none()
     if not item:
@@ -420,6 +423,7 @@ async def update_service_item(proposal_id: str, item_id: str, data: ProposalServ
 
 @budget_router.delete("/services/{item_id}", response_model=MessageResponse)
 async def delete_service_item(proposal_id: str, item_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await _get_proposal(proposal_id, db)
     result = await db.execute(select(ProposalServiceItem).where(ProposalServiceItem.id == item_id, ProposalServiceItem.proposal_id == proposal_id))
     item = result.scalar_one_or_none()
     if not item:
@@ -454,6 +458,7 @@ async def add_additive(proposal_id: str, data: ProposalAdditiveItemCreate, db: A
 
 @budget_router.put("/additives/{item_id}", response_model=ProposalAdditiveItemResponse)
 async def update_additive(proposal_id: str, item_id: str, data: ProposalAdditiveItemUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await _get_proposal(proposal_id, db)
     result = await db.execute(select(ProposalAdditiveItem).where(ProposalAdditiveItem.id == item_id, ProposalAdditiveItem.proposal_id == proposal_id))
     item = result.scalar_one_or_none()
     if not item:
@@ -468,6 +473,7 @@ async def update_additive(proposal_id: str, item_id: str, data: ProposalAdditive
 
 @budget_router.delete("/additives/{item_id}", response_model=MessageResponse)
 async def delete_additive(proposal_id: str, item_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await _get_proposal(proposal_id, db)
     result = await db.execute(select(ProposalAdditiveItem).where(ProposalAdditiveItem.id == item_id, ProposalAdditiveItem.proposal_id == proposal_id))
     item = result.scalar_one_or_none()
     if not item:
@@ -502,6 +508,7 @@ async def add_room(proposal_id: str, data: ProposalRoomCreate, db: AsyncSession 
 
 @budget_router.put("/rooms/{room_id}", response_model=ProposalRoomResponse)
 async def update_room(proposal_id: str, room_id: str, data: ProposalRoomUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await _get_proposal(proposal_id, db)
     result = await db.execute(select(ProposalRoom).where(ProposalRoom.id == room_id, ProposalRoom.proposal_id == proposal_id))
     room = result.scalar_one_or_none()
     if not room:
@@ -516,6 +523,7 @@ async def update_room(proposal_id: str, room_id: str, data: ProposalRoomUpdate, 
 
 @budget_router.delete("/rooms/{room_id}", response_model=MessageResponse)
 async def delete_room(proposal_id: str, room_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await _get_proposal(proposal_id, db)
     result = await db.execute(select(ProposalRoom).where(ProposalRoom.id == room_id, ProposalRoom.proposal_id == proposal_id))
     room = result.scalar_one_or_none()
     if not room:

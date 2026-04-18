@@ -290,7 +290,7 @@ export default function ProposalDetailPage() {
       await budgetApi.updateMaterial(id, itemId, {
         description: data.description, unit: data.unit,
         quantity: Number(data.quantity), unit_cost: Number(data.unit_cost), unit_price: Number(data.unit_price),
-        category: data.category || undefined, supplier_name: data.supplier_name || undefined,
+        category: data.category || null, supplier_name: data.supplier_name || null,
       })
       showToast("Material atualizado!")
       fetchBudgetData()
@@ -330,7 +330,7 @@ export default function ProposalDetailPage() {
       await budgetApi.updateService(id, itemId, {
         description: data.description, unit: data.unit,
         quantity: Number(data.quantity), unit_cost: Number(data.unit_cost), unit_price: Number(data.unit_price),
-        stage: data.stage || undefined, sub_stage: data.sub_stage || undefined,
+        stage: data.stage || null, sub_stage: data.sub_stage || null,
       })
       showToast("Servico atualizado!")
       fetchBudgetData()
@@ -370,7 +370,7 @@ export default function ProposalDetailPage() {
       await budgetApi.updateAdditive(id, itemId, {
         description: data.description, unit: data.unit,
         quantity: Number(data.quantity), unit_cost: Number(data.unit_cost), unit_price: Number(data.unit_price),
-        status: data.status || "pendente", responsible: data.responsible || undefined,
+        status: data.status || "pendente", responsible: data.responsible || null,
       })
       showToast("Aditivo atualizado!")
       fetchBudgetData()
