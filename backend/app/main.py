@@ -9,7 +9,7 @@ from app.core.database import init_db
 from app.api.routes import (
     auth, users, clients, suppliers, projects, leads,
     proposals, contracts, planning, purchases, diary,
-    financial, documents, dashboard, closing,
+    financial, documents, dashboard, closing, budget,
 )
 
 
@@ -58,6 +58,11 @@ app.include_router(financial.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(closing.router, prefix="/api")
+app.include_router(budget.router, prefix="/api")
+app.include_router(budget.service_catalog_router, prefix="/api")
+app.include_router(budget.material_catalog_router, prefix="/api")
+app.include_router(budget.composition_catalog_router, prefix="/api")
+app.include_router(budget.budget_router, prefix="/api")
 
 
 @app.get("/healthz")

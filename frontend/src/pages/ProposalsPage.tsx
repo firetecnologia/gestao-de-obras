@@ -106,10 +106,10 @@ export default function ProposalsPage() {
                 <TableCell className="text-sm font-semibold">{p.total_price ? formatBRL(Number(p.total_price)) : "-"}</TableCell>
                 <TableCell><Badge variant={STATUS_MAP[p.status]?.variant || "secondary"}>{STATUS_MAP[p.status]?.label || p.status}</Badge></TableCell>
                 <TableCell><div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setForm({ title: p.title, client_id: p.client_id || "", description: "", markup_percent: "30", status: p.status }); setShowForm(true) }}><Pencil className="h-4 w-4" /></Button>
-                  {p.status !== "aprovada" && <Button variant="ghost" size="icon" onClick={() => handleApprove(p.id)} title="Aprovar"><CheckCircle className="h-4 w-4 text-green-600" /></Button>}
-                  {p.status === "aprovada" && <Button variant="ghost" size="icon" onClick={() => handleGenerateContract(p.id)} title="Gerar Contrato"><FileSignature className="h-4 w-4 text-blue-600" /></Button>}
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditing(p); setForm({ title: p.title, client_id: p.client_id || "", description: "", markup_percent: "30", status: p.status }); setShowForm(true) }}><Pencil className="h-4 w-4" /></Button>
+                  {p.status !== "aprovada" && <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleApprove(p.id) }} title="Aprovar"><CheckCircle className="h-4 w-4 text-green-600" /></Button>}
+                  {p.status === "aprovada" && <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleGenerateContract(p.id) }} title="Gerar Contrato"><FileSignature className="h-4 w-4 text-blue-600" /></Button>}
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(p.id) }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                 </div></TableCell>
               </TableRow>
             ))}

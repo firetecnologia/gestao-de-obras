@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -32,7 +32,7 @@ export default function ContractDetailPage() {
   const [activeTab, setActiveTab] = useState("resumo")
   const { showToast } = useToast()
 
-  const fetchData = useCallback(async () => {
+  const fetchData = async () => {
     if (!id) return
     setLoading(true)
     try {
@@ -41,9 +41,9 @@ export default function ContractDetailPage() {
     } catch {
       showToast("Erro ao carregar contrato", "error")
     } finally { setLoading(false) }
-  }, [id, showToast])
+  }
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => { fetchData() }, [id])
 
   const handleGenerateInstallments = async () => {
     if (!id) return

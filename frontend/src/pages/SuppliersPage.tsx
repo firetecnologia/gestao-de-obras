@@ -62,8 +62,8 @@ export default function SuppliersPage() {
                 <TableCell>{s.address_city}{s.address_state ? `/${s.address_state}` : ""}</TableCell>
                 <TableCell><div className="flex">{Array.from({ length: s.rating || 0 }).map((_, i) => <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)}</div></TableCell>
                 <TableCell><div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => { setEditing(s); setForm({ name: s.name, cpf_cnpj: s.cpf_cnpj || "", specialty: s.specialty || "", email: s.email || "", phone: s.phone || "", address_city: s.address_city || "", address_state: s.address_state || "", notes: "", rating: s.rating || 0 }); setShowForm(true) }}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditing(s); setForm({ name: s.name, cpf_cnpj: s.cpf_cnpj || "", specialty: s.specialty || "", email: s.email || "", phone: s.phone || "", address_city: s.address_city || "", address_state: s.address_state || "", notes: "", rating: s.rating || 0 }); setShowForm(true) }}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(s.id) }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                 </div></TableCell>
               </TableRow>
             ))}

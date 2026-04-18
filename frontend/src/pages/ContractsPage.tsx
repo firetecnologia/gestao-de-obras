@@ -115,10 +115,10 @@ export default function ContractsPage() {
                 <TableCell className="text-xs">{c.start_date && `${c.start_date} → ${c.end_date || "?"}`}</TableCell>
                 <TableCell><Badge variant={STATUS_MAP[c.status]?.variant || "secondary"}>{STATUS_MAP[c.status]?.label || c.status}</Badge></TableCell>
                 <TableCell><div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setForm({ title: c.title, client_id: c.client_id, scope_summary: "", total_value: c.total_value?.toString() || "", payment_conditions: "", installments_count: "4", start_date: c.start_date || "", end_date: c.end_date || "" }); setShowForm(true) }}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleGenerateInstallments(c.id)} title="Gerar Parcelas"><Banknote className="h-4 w-4 text-green-600" /></Button>
-                  {(c.status === "ativo" || c.status === "rascunho") && <Button variant="ghost" size="icon" onClick={() => handleGenerateProject(c.id)} title="Gerar Obra"><HardHat className="h-4 w-4 text-orange-600" /></Button>}
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditing(c); setForm({ title: c.title, client_id: c.client_id, scope_summary: "", total_value: c.total_value?.toString() || "", payment_conditions: "", installments_count: "4", start_date: c.start_date || "", end_date: c.end_date || "" }); setShowForm(true) }}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleGenerateInstallments(c.id) }} title="Gerar Parcelas"><Banknote className="h-4 w-4 text-green-600" /></Button>
+                  {(c.status === "ativo" || c.status === "rascunho") && <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleGenerateProject(c.id) }} title="Gerar Obra"><HardHat className="h-4 w-4 text-orange-600" /></Button>}
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(c.id) }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                 </div></TableCell>
               </TableRow>
             ))}

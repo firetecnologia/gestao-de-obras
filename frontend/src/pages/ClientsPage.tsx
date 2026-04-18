@@ -125,8 +125,8 @@ export default function ClientsPage() {
                   <TableCell>{c.address_city}{c.address_state ? `/${c.address_state}` : ""}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(c)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(c) }}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(c.id) }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>

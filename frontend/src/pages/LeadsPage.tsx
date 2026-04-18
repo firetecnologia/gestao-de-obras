@@ -104,9 +104,9 @@ export default function LeadsPage() {
                   <TableCell><Badge variant={STATUS_COLORS[l.status] || "secondary"}>{STATUS_LABELS[l.status] || l.status}</Badge></TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => { setEditing(l); setForm({ name: l.name, email: l.email || "", phone: l.phone || "", company: l.company || "", source: l.source || "", status: l.status, notes: l.notes || "" }); setShowForm(true) }}><Pencil className="h-4 w-4" /></Button>
-                      {!["fechado_ganho", "fechado_perdido"].includes(l.status) && <Button variant="ghost" size="icon" onClick={() => handleConvert(l.id)} title="Converter em cliente"><UserPlus className="h-4 w-4 text-green-600" /></Button>}
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(l.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditing(l); setForm({ name: l.name, email: l.email || "", phone: l.phone || "", company: l.company || "", source: l.source || "", status: l.status, notes: l.notes || "" }); setShowForm(true) }}><Pencil className="h-4 w-4" /></Button>
+                      {!["fechado_ganho", "fechado_perdido"].includes(l.status) && <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleConvert(l.id) }} title="Converter em cliente"><UserPlus className="h-4 w-4 text-green-600" /></Button>}
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(l.id) }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>

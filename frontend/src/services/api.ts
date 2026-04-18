@@ -192,6 +192,66 @@ export const documentsApi = {
   download: (id: string) => api.get(`/documents/${id}/download`, { responseType: "blob" }),
 }
 
+// Budget / Orcamento
+export const budgetApi = {
+  // Proposal Header
+  getHeader: (proposalId: string) => api.get(`/proposals/${proposalId}/budget/header`),
+  updateHeader: (proposalId: string, data: Record<string, unknown>) => api.put(`/proposals/${proposalId}/budget/header`, data),
+
+  // Materials
+  listMaterials: (proposalId: string) => api.get(`/proposals/${proposalId}/budget/materials`),
+  addMaterial: (proposalId: string, data: Record<string, unknown>) => api.post(`/proposals/${proposalId}/budget/materials`, data),
+  updateMaterial: (proposalId: string, itemId: string, data: Record<string, unknown>) => api.put(`/proposals/${proposalId}/budget/materials/${itemId}`, data),
+  deleteMaterial: (proposalId: string, itemId: string) => api.delete(`/proposals/${proposalId}/budget/materials/${itemId}`),
+
+  // Services
+  listServices: (proposalId: string) => api.get(`/proposals/${proposalId}/budget/services`),
+  addService: (proposalId: string, data: Record<string, unknown>) => api.post(`/proposals/${proposalId}/budget/services`, data),
+  updateService: (proposalId: string, itemId: string, data: Record<string, unknown>) => api.put(`/proposals/${proposalId}/budget/services/${itemId}`, data),
+  deleteService: (proposalId: string, itemId: string) => api.delete(`/proposals/${proposalId}/budget/services/${itemId}`),
+
+  // Additives
+  listAdditives: (proposalId: string) => api.get(`/proposals/${proposalId}/budget/additives`),
+  addAdditive: (proposalId: string, data: Record<string, unknown>) => api.post(`/proposals/${proposalId}/budget/additives`, data),
+  updateAdditive: (proposalId: string, itemId: string, data: Record<string, unknown>) => api.put(`/proposals/${proposalId}/budget/additives/${itemId}`, data),
+  deleteAdditive: (proposalId: string, itemId: string) => api.delete(`/proposals/${proposalId}/budget/additives/${itemId}`),
+
+  // Rooms
+  listRooms: (proposalId: string) => api.get(`/proposals/${proposalId}/budget/rooms`),
+  addRoom: (proposalId: string, data: Record<string, unknown>) => api.post(`/proposals/${proposalId}/budget/rooms`, data),
+  updateRoom: (proposalId: string, roomId: string, data: Record<string, unknown>) => api.put(`/proposals/${proposalId}/budget/rooms/${roomId}`, data),
+  deleteRoom: (proposalId: string, roomId: string) => api.delete(`/proposals/${proposalId}/budget/rooms/${roomId}`),
+
+  // Commercial Terms
+  getCommercialTerms: (proposalId: string) => api.get(`/proposals/${proposalId}/budget/commercial-terms`),
+  updateCommercialTerms: (proposalId: string, data: Record<string, unknown>) => api.put(`/proposals/${proposalId}/budget/commercial-terms`, data),
+
+  // Summary
+  getSummary: (proposalId: string) => api.get(`/proposals/${proposalId}/budget/summary`),
+}
+
+// Catalogs
+export const catalogApi = {
+  // Service Catalog
+  listServices: (params?: Record<string, unknown>) => api.get("/catalog/services", { params }),
+  getService: (id: string) => api.get(`/catalog/services/${id}`),
+  createService: (data: Record<string, unknown>) => api.post("/catalog/services", data),
+  updateService: (id: string, data: Record<string, unknown>) => api.put(`/catalog/services/${id}`, data),
+  deleteService: (id: string) => api.delete(`/catalog/services/${id}`),
+
+  // Material Catalog
+  listMaterials: (params?: Record<string, unknown>) => api.get("/catalog/materials", { params }),
+  getMaterial: (id: string) => api.get(`/catalog/materials/${id}`),
+  createMaterial: (data: Record<string, unknown>) => api.post("/catalog/materials", data),
+  updateMaterial: (id: string, data: Record<string, unknown>) => api.put(`/catalog/materials/${id}`, data),
+  deleteMaterial: (id: string) => api.delete(`/catalog/materials/${id}`),
+
+  // Composition Catalog
+  listCompositions: (params?: Record<string, unknown>) => api.get("/catalog/compositions", { params }),
+  createComposition: (data: Record<string, unknown>) => api.post("/catalog/compositions", data),
+  deleteComposition: (id: string) => api.delete(`/catalog/compositions/${id}`),
+}
+
 // Dashboard
 export const dashboardApi = {
   executive: () => api.get("/dashboard/executive"),

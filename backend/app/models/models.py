@@ -738,3 +738,200 @@ class AuditLog(Base, TimestampMixin):
     ip_address = Column(String(45), nullable=True)
 
     user = relationship("User", back_populates="audit_logs")
+
+
+# ==================== BUDGET / ORCAMENTO MODULE ====================
+
+class ServiceCatalog(Base, TimestampMixin, SoftDeleteMixin):
+    __tablename__ = "service_catalog"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    code = Column(String(50), nullable=True, index=True)
+    stage = Column(String(100), nullable=True)  # etapa
+    sub_stage = Column(String(100), nullable=True)  # subetapa
+    description = Column(Text, nullable=False)
+    unit = Column(String(20), nullable=True)  # m2, m, un, vb
+    default_cost = Column(Numeric(12, 2), nullable=True)
+    default_price = Column(Numeric(12, 2), nullable=True)
+    price_origin = Column(String(100), nullable=True)  # manual, sinapi, cotacao
+    sinapi_ref = Column(String(50), nullable=True)
+    notes = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+
+
+class MaterialCatalog(Base, TimestampMixin, SoftDeleteMixin):
+    __tablename__ = "material_catalog"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    code = Column(String(50), nullable=True, index=True)
+    name = Column(String(255), nullable=False)
+    category = Column(String(100), nullable=True)
+    unit = Column(String(20), nullable=True)
+    default_cost = Column(Numeric(12, 2), nullable=True)
+    default_price = Column(Numeric(12, 2), nullable=True)
+    preferred_supplier_id = Column(UUID(as_uuid=False), ForeignKey("suppliers.id"), nullable=True)
+    cost_center = Column(String(100), nullable=True)
+    notes = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+
+    preferred_supplier = relationship("Supplier", foreign_keys=[preferred_supplier_id])
+
+
+class CompositionCatalog(Base, TimestampMixin, SoftDeleteMixin):
+    __tablename__ = "composition_catalog"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    category = Column(String(100), nullable=True)
+    unit = Column(String(20), nullable=True)
+    total_cost = Column(Numeric(14, 2), default=0)
+    total_price = Column(Numeric(14, 2), default=0)
+    notes = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+
+    items = relationship("CompositionItem", back_populates="composition", cascade="all, delete-orphan")
+
+
+class CompositionItem(Base, TimestampMixin):
+    __tablename__ = "composition_items"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    composition_id = Column(UUID(as_uuid=False), ForeignKey("composition_catalog.id"), nullable=False)
+    item_type = Column(String(20), nullable=False)  # material, servico
+    description = Column(Text, nullable=False)
+    unit = Column(String(20), nullable=True)
+    coefficient = Column(Numeric(12, 4), default=1)
+    unit_cost = Column(Numeric(12, 2), default=0)
+    unit_price = Column(Numeric(12, 2), default=0)
+    total_cost = Column(Numeric(14, 2), default=0)
+    total_price = Column(Numeric(14, 2), default=0)
+    service_catalog_id = Column(UUID(as_uuid=False), ForeignKey("service_catalog.id"), nullable=True)
+    material_catalog_id = Column(UUID(as_uuid=False), ForeignKey("material_catalog.id"), nullable=True)
+
+    composition = relationship("CompositionCatalog", back_populates="items")
+
+
+class ProposalHeader(Base, TimestampMixin):
+    __tablename__ = "proposal_headers"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    proposal_id = Column(UUID(as_uuid=False), ForeignKey("proposals.id"), nullable=False, unique=True)
+    address = Column(Text, nullable=True)
+    responsible = Column(String(255), nullable=True)
+    architect = Column(String(255), nullable=True)
+    payment_method = Column(String(255), nullable=True)
+    deadline = Column(String(255), nullable=True)
+    observations = Column(Text, nullable=True)
+
+    proposal = relationship("Proposal", backref="header")
+
+
+class ProposalMaterialItem(Base, TimestampMixin):
+    __tablename__ = "proposal_material_items"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    proposal_id = Column(UUID(as_uuid=False), ForeignKey("proposals.id"), nullable=False)
+    material_catalog_id = Column(UUID(as_uuid=False), ForeignKey("material_catalog.id"), nullable=True)
+    description = Column(Text, nullable=False)
+    unit = Column(String(20), nullable=True)
+    quantity = Column(Numeric(12, 4), default=1)
+    unit_cost = Column(Numeric(12, 2), default=0)
+    total_cost = Column(Numeric(14, 2), default=0)
+    suggested_price = Column(Numeric(12, 2), default=0)
+    unit_price = Column(Numeric(12, 2), default=0)
+    total_price = Column(Numeric(14, 2), default=0)
+    category = Column(String(100), nullable=True)
+    supplier_name = Column(String(255), nullable=True)
+    cost_center = Column(String(100), nullable=True)
+    room = Column(String(100), nullable=True)  # ambiente
+    stage = Column(String(100), nullable=True)  # etapa
+    sort_order = Column(Integer, default=0)
+    notes = Column(Text, nullable=True)
+
+    proposal = relationship("Proposal", backref="material_items")
+
+
+class ProposalServiceItem(Base, TimestampMixin):
+    __tablename__ = "proposal_service_items"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    proposal_id = Column(UUID(as_uuid=False), ForeignKey("proposals.id"), nullable=False)
+    service_catalog_id = Column(UUID(as_uuid=False), ForeignKey("service_catalog.id"), nullable=True)
+    description = Column(Text, nullable=False)
+    unit = Column(String(20), nullable=True)
+    quantity = Column(Numeric(12, 4), default=1)
+    unit_cost = Column(Numeric(12, 2), default=0)
+    total_cost = Column(Numeric(14, 2), default=0)
+    suggested_price = Column(Numeric(12, 2), default=0)
+    unit_price = Column(Numeric(12, 2), default=0)
+    total_price = Column(Numeric(14, 2), default=0)
+    stage = Column(String(100), nullable=True)
+    sub_stage = Column(String(100), nullable=True)
+    provider_name = Column(String(255), nullable=True)
+    service_type = Column(String(100), nullable=True)
+    sort_order = Column(Integer, default=0)
+    notes = Column(Text, nullable=True)
+
+    proposal = relationship("Proposal", backref="service_items")
+
+
+class ProposalAdditiveItem(Base, TimestampMixin):
+    __tablename__ = "proposal_additive_items"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    proposal_id = Column(UUID(as_uuid=False), ForeignKey("proposals.id"), nullable=False)
+    description = Column(Text, nullable=False)
+    unit = Column(String(20), nullable=True)
+    quantity = Column(Numeric(12, 4), default=1)
+    unit_cost = Column(Numeric(12, 2), default=0)
+    total_cost = Column(Numeric(14, 2), default=0)
+    suggested_price = Column(Numeric(12, 2), default=0)
+    unit_price = Column(Numeric(12, 2), default=0)
+    total_price = Column(Numeric(14, 2), default=0)
+    status = Column(String(50), default="pendente")  # pendente, aprovado, rejeitado
+    responsible = Column(String(255), nullable=True)
+    date = Column(Date, nullable=True)
+    sort_order = Column(Integer, default=0)
+    notes = Column(Text, nullable=True)
+
+    proposal = relationship("Proposal", backref="additive_items")
+
+
+class ProposalRoom(Base, TimestampMixin):
+    __tablename__ = "proposal_rooms"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    proposal_id = Column(UUID(as_uuid=False), ForeignKey("proposals.id"), nullable=False)
+    name = Column(String(255), nullable=False)
+    width = Column(Numeric(10, 2), nullable=True)
+    length = Column(Numeric(10, 2), nullable=True)
+    height = Column(Numeric(10, 2), nullable=True)
+    perimeter = Column(Numeric(10, 2), nullable=True)  # calculated
+    area = Column(Numeric(10, 2), nullable=True)  # calculated
+    wall_area = Column(Numeric(10, 2), nullable=True)  # calculated
+    notes = Column(Text, nullable=True)
+    sort_order = Column(Integer, default=0)
+
+    proposal = relationship("Proposal", backref="rooms")
+
+
+class ProposalCommercialTerms(Base, TimestampMixin):
+    __tablename__ = "proposal_commercial_terms"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    proposal_id = Column(UUID(as_uuid=False), ForeignKey("proposals.id"), nullable=False, unique=True)
+    payment_method = Column(String(255), nullable=True)
+    deadline = Column(String(255), nullable=True)
+    down_payment_percent = Column(Numeric(5, 2), nullable=True)
+    down_payment_value = Column(Numeric(14, 2), nullable=True)
+    num_installments = Column(Integer, nullable=True)
+    validity_days = Column(Integer, nullable=True)
+    scope_included = Column(Text, nullable=True)
+    scope_excluded = Column(Text, nullable=True)
+    commercial_notes = Column(Text, nullable=True)
+    tax_percent = Column(Numeric(5, 2), nullable=True)
+    discount_percent = Column(Numeric(5, 2), nullable=True)
+    discount_value = Column(Numeric(14, 2), nullable=True)
+    min_margin_percent = Column(Numeric(5, 2), nullable=True)
+
+    proposal = relationship("Proposal", backref="commercial_terms_rel")

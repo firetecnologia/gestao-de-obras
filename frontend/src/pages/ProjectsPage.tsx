@@ -89,8 +89,8 @@ export default function ProjectsPage() {
                 <TableCell className="text-xs">{p.planned_start && `${p.planned_start} → ${p.planned_end || "?"}`}</TableCell>
                 <TableCell className="text-sm">{p.estimated_value ? formatBRL(p.estimated_value) : "-"}</TableCell>
                 <TableCell><div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setForm({ name: p.name, client_id: p.client_id, type: p.type, status: p.status, description: "", address_street: "", address_city: "", address_state: "", area_m2: p.area_m2?.toString() || "", planned_start: p.planned_start || "", planned_end: p.planned_end || "" }); setShowForm(true) }}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditing(p); setForm({ name: p.name, client_id: p.client_id, type: p.type, status: p.status, description: "", address_street: "", address_city: "", address_state: "", area_m2: p.area_m2?.toString() || "", planned_start: p.planned_start || "", planned_end: p.planned_end || "" }); setShowForm(true) }}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(p.id) }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                 </div></TableCell>
               </TableRow>
             ))}

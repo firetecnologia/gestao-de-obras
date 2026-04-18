@@ -169,7 +169,7 @@ export default function ProjectDetailPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm font-medium">{formatDateBR(d.date as string)}</p>
-                      <p className="text-sm text-slate-600 mt-1">{String(d.description || "")}</p>
+                      <p className="text-sm text-slate-600 mt-1">{String((d.description as string) || (d.activities as string) || "")}</p>
                       {d.weather ? <p className="text-xs text-slate-400 mt-1">Clima: {String(d.weather)}</p> : null}
                     </div>
                   </div>
