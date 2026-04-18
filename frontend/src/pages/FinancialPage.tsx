@@ -59,12 +59,8 @@ export default function FinancialPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, unknown> = { page_size: 100 }
-      if (filterType) params.type = filterType
-      if (filterStatus) params.status = filterStatus
-      if (filterProject) params.project_id = filterProject
       const [eRes, sRes, oRes, pRes] = await Promise.all([
-        financialApi.listEntries(params), financialApi.getSummary(), financialApi.listOverdue(), projectsApi.list({ page_size: 100 })
+        financialApi.listEntries({ page_size: 100 }), financialApi.getSummary(), financialApi.listOverdue(), projectsApi.list({ page_size: 100 })
       ])
       setEntries(eRes.data.items)
       setSummary(sRes.data)
@@ -73,7 +69,7 @@ export default function FinancialPage() {
     } catch {
       showToast("Erro ao carregar dados financeiros", "error")
     } finally { setLoading(false) }
-  }, [filterType, filterStatus, filterProject, showToast])
+  }, [showToast])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -97,6 +93,12 @@ export default function FinancialPage() {
 
   const receivables = entries.filter(e => e.type === "receita" && e.status !== "recebido" && e.status !== "pago")
   const payables = entries.filter(e => e.type === "despesa" && e.status !== "pago" && e.status !== "recebido")
+  const filteredEntries = entries.filter(e => {
+    if (filterType && e.type !== filterType) return false
+    if (filterStatus && e.status !== filterStatus) return false
+    if (filterProject && e.project_id !== filterProject) return false
+    return true
+  })
 
   const balanceColor = summary && toNumber(summary.balance_planned) >= 0 ? "text-green-600" : "text-red-600"
   const overdueCardBorder = summary && toNumber(summary.overdue_count) > 0 ? "border-l-red-500" : "border-l-green-500"
@@ -334,8 +336,8 @@ export default function FinancialPage() {
               </TableRow></TableHeader>
               <TableBody>
                 {loading ? <TableRow><TableCell colSpan={8} className="text-center py-8">Carregando...</TableCell></TableRow>
-                : entries.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center py-8 text-slate-500">Nenhum lançamento</TableCell></TableRow>
-                : entries.map((e) => (
+                : filteredEntries.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center py-8 text-slate-500">Nenhum lançamento</TableCell></TableRow>
+                : filteredEntries.map((e) => (
                   <TableRow key={e.id}>
                     <TableCell><Badge variant={e.type === "receita" ? "success" : "destructive"}>{e.type === "receita" ? "Receita" : "Despesa"}</Badge></TableCell>
                     <TableCell className="text-sm">{e.category || "-"}</TableCell>
