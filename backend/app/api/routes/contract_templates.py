@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.exc import IntegrityError
 from typing import Optional
 from datetime import datetime, timezone
 
@@ -168,20 +169,30 @@ async def generate_contract_from_template(
     for key, value in replacements.items():
         content = content.replace("{{" + key + "}}", str(value))
 
-    # Create contract
-    count = (await db.execute(select(func.count()).select_from(Contract))).scalar() or 0
-    contract = Contract(
-        code=f"CTR-{count + 1:04d}",
-        title=f"Contrato - {client.name}",
-        client_id=client.id,
-        proposal_id=data.proposal_id,
-        description=content,
-        scope_summary=content[:500] if content else None,
-        total_value=float(proposal.total_price or 0) if proposal else 0,
-        status="rascunho",
-        created_by=current_user.id,
-    )
-    db.add(contract)
-    await db.flush()
+    # Create contract with retry for code uniqueness
+    max_retries = 3
+    for attempt in range(max_retries):
+        count = (await db.execute(select(func.count()).select_from(Contract))).scalar() or 0
+        code = f"CTR-{count + 1 + attempt:04d}"
+        contract = Contract(
+            code=code,
+            title=f"Contrato - {client.name}",
+            client_id=client.id,
+            proposal_id=data.proposal_id,
+            description=content,
+            scope_summary=content[:500] if content else None,
+            total_value=float(proposal.total_price or 0) if proposal else 0,
+            status="rascunho",
+            created_by=current_user.id,
+        )
+        db.add(contract)
+        try:
+            await db.flush()
+            break
+        except IntegrityError:
+            await db.rollback()
+            if attempt == max_retries - 1:
+                raise HTTPException(status_code=409, detail="Não foi possível gerar código único para o contrato")
+            continue
 
     return MessageResponse(message=f"Contrato gerado com sucesso. ID: {contract.id}")

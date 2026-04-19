@@ -266,21 +266,21 @@ async def dashboard_pie_charts(
 ):
     """Data for pie charts: revenue vs expenses, project status, installment status."""
     base_filter = FinancialEntry.is_deleted.is_(False)
+    project_filter = FinancialEntry.project_id == project_id if project_id else True
 
     rev_total = (await db.execute(
         select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0))
-        .where(base_filter, FinancialEntry.type == "receita")
+        .where(base_filter, project_filter, FinancialEntry.type == "receita")
     )).scalar() or 0
     exp_total = (await db.execute(
         select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0))
-        .where(base_filter, FinancialEntry.type == "despesa")
+        .where(base_filter, project_filter, FinancialEntry.type == "despesa")
     )).scalar() or 0
 
-    project_status = await db.execute(
-        select(Project.status, func.count())
-        .where(Project.is_deleted.is_(False))
-        .group_by(Project.status)
-    )
+    project_status_query = select(Project.status, func.count()).where(Project.is_deleted.is_(False))
+    if project_id:
+        project_status_query = project_status_query.where(Project.id == project_id)
+    project_status = await db.execute(project_status_query.group_by(Project.status))
     project_status_data = [{"label": r[0].replace("_", " ").title(), "value": r[1]} for r in project_status.all()]
 
     installment_status = await db.execute(
@@ -289,11 +289,10 @@ async def dashboard_pie_charts(
     )
     installment_data = [{"label": r[0].replace("_", " ").title(), "value": r[1]} for r in installment_status.all()]
 
-    cat_result = await db.execute(
-        select(FinancialEntry.category, func.sum(FinancialEntry.planned_amount))
-        .where(base_filter, FinancialEntry.type == "despesa")
-        .group_by(FinancialEntry.category)
-    )
+    cat_query = select(FinancialEntry.category, func.sum(FinancialEntry.planned_amount)).where(base_filter, FinancialEntry.type == "despesa")
+    if project_id:
+        cat_query = cat_query.where(FinancialEntry.project_id == project_id)
+    cat_result = await db.execute(cat_query.group_by(FinancialEntry.category))
     expense_categories = [{"label": r[0] or "Sem categoria", "value": float(r[1] or 0)} for r in cat_result.all()]
 
     return {

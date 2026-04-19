@@ -12,6 +12,20 @@ from app.schemas.clients import (
     ClientContactCreate, ClientContactResponse,
 )
 from app.schemas.base import PaginatedResponse, MessageResponse
+from pydantic import BaseModel
+
+
+class ClientBankDataCreate(BaseModel):
+    bank_name: Optional[str] = None
+    bank_agency: Optional[str] = None
+    bank_account: Optional[str] = None
+    bank_account_type: Optional[str] = None
+    pix_key: Optional[str] = None
+    pix_key_type: Optional[str] = None
+    holder_name: Optional[str] = None
+    holder_cpf_cnpj: Optional[str] = None
+    is_primary: bool = False
+    notes: Optional[str] = None
 
 router = APIRouter(prefix="/clients", tags=["Clientes"])
 
@@ -165,11 +179,11 @@ async def list_bank_data(client_id: str, db: AsyncSession = Depends(get_db), cur
 
 
 @router.post("/{client_id}/bank-data", status_code=status.HTTP_201_CREATED)
-async def add_bank_data(client_id: str, data: dict, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def add_bank_data(client_id: str, data: ClientBankDataCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(select(Client).where(Client.id == client_id, Client.is_deleted.is_(False)))
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
-    bank = ClientBankData(client_id=client_id, **{k: v for k, v in data.items() if k != "client_id"})
+    bank = ClientBankData(client_id=client_id, **data.model_dump(exclude_unset=True))
     db.add(bank)
     await db.flush()
     await db.refresh(bank)
