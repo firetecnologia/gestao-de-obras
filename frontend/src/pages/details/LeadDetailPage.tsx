@@ -11,7 +11,7 @@ type Tab = "resumo" | "endereco" | "interacoes" | "historico"
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { toast } = useToast()
+  const { showToast } = useToast()
   const qc = useQueryClient()
   const [tab, setTab] = useState<Tab>("resumo")
   const [interaction, setInteraction] = useState({ type: "email", notes: "" })
@@ -21,11 +21,11 @@ export default function LeadDetailPage() {
 
   const convertMut = useMutation({
     mutationFn: () => leadsApi.convert(id!),
-    onSuccess: () => { toast({ title: "Lead convertido em cliente!" }); navigate("/clients") },
+    onSuccess: () => { showToast("Lead convertido em cliente!"); navigate("/clients") },
   })
   const addInteractionMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => leadsApi.addInteraction(id!, d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["lead", id] }); setInteraction({ type: "email", notes: "" }); toast({ title: "Interação registrada" }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["lead", id] }); setInteraction({ type: "email", notes: "" }); showToast("Interação registrada") },
   })
 
   if (!lead) return <div className="p-6">Carregando...</div>
@@ -39,7 +39,7 @@ export default function LeadDetailPage() {
 
   return (
     <div className="p-6">
-      <DetailPageHeader title={lead.name} backTo="/leads" backLabel="Leads" />
+      <DetailPageHeader title={lead.name} breadcrumbs={[{ label: "Leads", href: "/leads" }, { label: lead.name }]} />
       <div className="flex gap-2 mb-6 border-b">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}

@@ -10,7 +10,7 @@ type Tab = "resumo" | "medicoes" | "cronograma" | "financeiro" | "diario"
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { toast } = useToast()
+  const { showToast } = useToast()
   const qc = useQueryClient()
   const [tab, setTab] = useState<Tab>("resumo")
 
@@ -29,7 +29,7 @@ export default function ProjectDetailPage() {
 
   const createMeasurement = useMutation({
     mutationFn: (d: Record<string, unknown>) => measurementsApi.create(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["measurements", id] }); setShowMForm(false); toast({ title: "Medição registrada! Cronograma e financeiro atualizados." }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["measurements", id] }); setShowMForm(false); showToast("Medição registrada! Cronograma e financeiro atualizados.") },
   })
 
   if (!project) return <div className="p-6">Carregando...</div>
@@ -44,7 +44,7 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="p-6">
-      <DetailPageHeader title={project.name} backTo="/projects" backLabel="Obras" />
+      <DetailPageHeader title={project.name} breadcrumbs={[{ label: "Obras", href: "/projects" }, { label: project.name }]} />
       <div className="flex gap-2 mb-6 border-b">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}

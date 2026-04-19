@@ -25,7 +25,7 @@ export default function SupplierDetailPage() {
 
   return (
     <div className="p-6">
-      <DetailPageHeader title={supplier.name} backTo="/suppliers" backLabel="Fornecedores" />
+      <DetailPageHeader title={supplier.name} breadcrumbs={[{ label: "Fornecedores", href: "/suppliers" }, { label: supplier.name }]} />
       <div className="flex gap-2 mb-6 border-b">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}

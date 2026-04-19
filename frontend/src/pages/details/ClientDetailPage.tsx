@@ -10,7 +10,7 @@ type Tab = "resumo" | "contatos" | "bancario" | "obras" | "contratos"
 
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { toast } = useToast()
+  const { showToast } = useToast()
   const qc = useQueryClient()
   const [tab, setTab] = useState<Tab>("resumo")
 
@@ -24,11 +24,11 @@ export default function ClientDetailPage() {
 
   const addBankMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => clientBankDataApi.create(id!, d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["client-bank", id] }); setShowBankForm(false); toast({ title: "Dados bancários adicionados" }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["client-bank", id] }); setShowBankForm(false); showToast("Dados bancários adicionados") },
   })
   const delBankMut = useMutation({
     mutationFn: (bankId: string) => clientBankDataApi.delete(id!, bankId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["client-bank", id] }); toast({ title: "Dados bancários removidos" }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["client-bank", id] }); showToast("Dados bancários removidos") },
   })
 
   if (!client) return <div className="p-6">Carregando...</div>
@@ -43,7 +43,7 @@ export default function ClientDetailPage() {
 
   return (
     <div className="p-6">
-      <DetailPageHeader title={client.name} backTo="/clients" backLabel="Clientes" />
+      <DetailPageHeader title={client.name} breadcrumbs={[{ label: "Clientes", href: "/clients" }, { label: client.name }]} />
       <div className="flex gap-2 mb-6 border-b">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
