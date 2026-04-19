@@ -256,6 +256,9 @@ export const catalogApi = {
 export const dashboardApi = {
   executive: () => api.get("/dashboard/executive"),
   operational: () => api.get("/dashboard/operational"),
+  byProject: (projectId: string) => api.get(`/dashboard/by-project/${projectId}`),
+  byClient: (clientId: string) => api.get(`/dashboard/by-client/${clientId}`),
+  pieCharts: () => api.get("/dashboard/charts/pie"),
 }
 
 // Closing
@@ -263,4 +266,46 @@ export const closingApi = {
   getChecklist: (projectId: string) => api.get(`/closing/projects/${projectId}`),
   updateChecklist: (projectId: string, data: Record<string, unknown>) => api.put(`/closing/projects/${projectId}`, data),
   closeProject: (projectId: string) => api.post(`/closing/projects/${projectId}/close`),
+}
+
+// Contract Templates
+export const contractTemplatesApi = {
+  list: (params?: Record<string, unknown>) => api.get("/contract-templates", { params }),
+  get: (id: string) => api.get(`/contract-templates/${id}`),
+  create: (data: Record<string, unknown>) => api.post("/contract-templates", data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/contract-templates/${id}`, data),
+  delete: (id: string) => api.delete(`/contract-templates/${id}`),
+  generate: (data: Record<string, unknown>) => api.post("/contract-templates/generate", data),
+}
+
+// Measurements
+export const measurementsApi = {
+  list: (projectId: string) => api.get(`/measurements/projects/${projectId}`),
+  create: (data: Record<string, unknown>) => api.post("/measurements", data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/measurements/${id}`, data),
+  delete: (id: string) => api.delete(`/measurements/${id}`),
+}
+
+// SINAPI
+export const sinapiApi = {
+  listSources: () => api.get("/sinapi/sources"),
+  createSource: (data: Record<string, unknown>) => api.post("/sinapi/sources", data),
+  deleteSource: (id: string) => api.delete(`/sinapi/sources/${id}`),
+  importCsv: (sourceId: string, formData: FormData) => api.post(`/sinapi/sources/${sourceId}/import`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
+  searchItems: (params?: Record<string, unknown>) => api.get("/sinapi/items", { params }),
+}
+
+// Purchase Receipts
+export const purchaseReceiptsApi = {
+  list: (orderId: string) => api.get(`/purchase-receipts/orders/${orderId}`),
+  create: (data: Record<string, unknown>) => api.post("/purchase-receipts", data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/purchase-receipts/${id}`, data),
+  delete: (id: string) => api.delete(`/purchase-receipts/${id}`),
+}
+
+// Client Bank Data
+export const clientBankDataApi = {
+  list: (clientId: string) => api.get(`/clients/${clientId}/bank-data`),
+  create: (clientId: string, data: Record<string, unknown>) => api.post(`/clients/${clientId}/bank-data`, data),
+  delete: (clientId: string, bankId: string) => api.delete(`/clients/${clientId}/bank-data/${bankId}`),
 }

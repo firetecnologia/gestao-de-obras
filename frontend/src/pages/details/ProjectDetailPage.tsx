@@ -1,184 +1,165 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useParams } from "react-router-dom"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
-import { DetailPageHeader } from "@/components/shared/DetailPageHeader"
-import { InfoCard } from "@/components/shared/InfoCard"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { projectsApi, planningApi, financialApi, diaryApi } from "@/services/api"
-import { useToast } from "@/components/ui/toast"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { projectsApi, measurementsApi, planningApi, financialApi } from "@/services/api"
 import { formatBRL, formatDateBR } from "@/lib/format"
+import { useToast } from "@/components/ui/toast"
+import { DetailPageHeader } from "@/components/shared/DetailPageHeader"
 
-const TYPE_LABELS: Record<string, string> = {
-  reforma_residencial: "Reforma Residencial", reforma_comercial: "Reforma Comercial",
-  construcao: "Construcao", gestao: "Gestao de Obra",
-  planejamento: "Planejamento", compatibilizacao: "Compatibilizacao",
-}
-
-interface Project {
-  id: string; name: string; code?: string; client_id?: string; client_name?: string
-  type: string; status: string; description?: string
-  planned_start?: string; planned_end?: string; actual_start?: string; actual_end?: string
-  area_m2?: number; estimated_value?: number; address_city?: string; address_state?: string
-  created_at?: string
-}
+type Tab = "resumo" | "medicoes" | "cronograma" | "financeiro" | "diario"
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const [project, setProject] = useState<Project | null>(null)
-  const [phases, setPhases] = useState<Array<Record<string, unknown>>>([])
-  const [financial, setFinancial] = useState<Array<Record<string, unknown>>>([])
-  const [diary, setDiary] = useState<Array<Record<string, unknown>>>([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("resumo")
-  const { showToast } = useToast()
+  const { toast } = useToast()
+  const qc = useQueryClient()
+  const [tab, setTab] = useState<Tab>("resumo")
 
-  useEffect(() => {
-    if (!id) return
-    const fetch = async () => {
-      setLoading(true)
-      try {
-        const pRes = await projectsApi.get(id)
-        setProject(pRes.data)
-        try {
-          const phRes = await planningApi.getPhases(id)
-          setPhases(phRes.data || [])
-        } catch { /* planning may not exist yet */ }
-        try {
-          const fRes = await financialApi.listEntries({ project_id: id, page_size: 50 })
-          setFinancial(fRes.data.items || [])
-        } catch { /* ok */ }
-        try {
-          const dRes = await diaryApi.list({ project_id: id, page_size: 20 })
-          setDiary(dRes.data.items || [])
-        } catch { /* ok */ }
-      } catch {
-        showToast("Erro ao carregar obra", "error")
-      } finally { setLoading(false) }
-    }
-    fetch()
-  }, [id, showToast])
+  const { data } = useQuery({ queryKey: ["project", id], queryFn: () => projectsApi.get(id!) })
+  const { data: measurementsData } = useQuery({ queryKey: ["measurements", id], queryFn: () => measurementsApi.list(id!), enabled: tab === "medicoes" })
+  const { data: phasesData } = useQuery({ queryKey: ["phases", id], queryFn: () => planningApi.getPhases(id!), enabled: tab === "cronograma" })
+  const { data: finData } = useQuery({ queryKey: ["project-financial", id], queryFn: () => financialApi.listEntries({ project_id: id }), enabled: tab === "financeiro" })
 
-  if (loading) return <div className="flex items-center justify-center py-20"><p className="text-slate-500">Carregando...</p></div>
-  if (!project) return <div className="flex items-center justify-center py-20"><p className="text-slate-500">Obra nao encontrada</p></div>
+  const project = data?.data
+  const measurements = measurementsData?.data || []
+  const phases = phasesData?.data || []
+  const entries = finData?.data || []
+
+  const [mForm, setMForm] = useState({ phase_id: "", percent_complete: "", measured_value: "", observation: "" })
+  const [showMForm, setShowMForm] = useState(false)
+
+  const createMeasurement = useMutation({
+    mutationFn: (d: Record<string, unknown>) => measurementsApi.create(d),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["measurements", id] }); setShowMForm(false); toast({ title: "Medição registrada! Cronograma e financeiro atualizados." }) },
+  })
+
+  if (!project) return <div className="p-6">Carregando...</div>
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "resumo", label: "Resumo" },
+    { key: "medicoes", label: "Medições" },
+    { key: "cronograma", label: "Cronograma" },
+    { key: "financeiro", label: "Financeiro" },
+    { key: "diario", label: "Diário" },
+  ]
 
   return (
-    <div className="space-y-4">
-      <DetailPageHeader
-        title={project.name}
-        subtitle={(project.code ? project.code + " - " : "") + (TYPE_LABELS[project.type] || project.type)}
-        breadcrumbs={[
-          { label: "Obras", href: "/projects" },
-          { label: project.name },
-        ]}
-        actions={<StatusBadge status={project.status} />}
-      />
+    <div className="p-6">
+      <DetailPageHeader title={project.name} backTo="/projects" backLabel="Obras" />
+      <div className="flex gap-2 mb-6 border-b">
+        {tabs.map((t) => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            className={`px-4 py-2 font-medium border-b-2 ${tab === t.key ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="resumo">Resumo</TabsTrigger>
-          <TabsTrigger value="cronograma">Cronograma ({phases.length})</TabsTrigger>
-          <TabsTrigger value="financeiro">Financeiro ({financial.length})</TabsTrigger>
-          <TabsTrigger value="diario">Diario ({diary.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="resumo">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <InfoCard label="Cliente" value={project.client_name || "-"} />
-            <InfoCard label="Tipo" value={TYPE_LABELS[project.type] || project.type} />
-            <InfoCard label="Area (m2)" value={project.area_m2 ? project.area_m2 + " m2" : "-"} />
-            <InfoCard label="Valor Estimado" value={formatBRL(project.estimated_value)} />
+      {tab === "resumo" && (
+        <div className="grid grid-cols-2 gap-6">
+          <div className="bg-white border rounded-lg p-4 space-y-3">
+            <h3 className="font-semibold">Dados da Obra</h3>
+            <p><span className="text-gray-500">Status:</span> <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-sm">{project.status}</span></p>
+            <p><span className="text-gray-500">Tipo:</span> {project.type || "-"}</p>
+            <p><span className="text-gray-500">Endereço:</span> {project.address || "-"}</p>
+            <p><span className="text-gray-500">Início:</span> {formatDateBR(project.start_date)}</p>
+            <p><span className="text-gray-500">Previsão Fim:</span> {formatDateBR(project.end_date)}</p>
+            <p><span className="text-gray-500">Valor:</span> {formatBRL(project.total_value || 0)}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="font-semibold text-slate-700 mb-3">Periodo</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-slate-500">Inicio Previsto:</span><span>{formatDateBR(project.planned_start)}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-500">Fim Previsto:</span><span>{formatDateBR(project.planned_end)}</span></div>
-                  {project.actual_start && <div className="flex justify-between"><span className="text-slate-500">Inicio Real:</span><span>{formatDateBR(project.actual_start)}</span></div>}
-                  {project.actual_end && <div className="flex justify-between"><span className="text-slate-500">Fim Real:</span><span>{formatDateBR(project.actual_end)}</span></div>}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="font-semibold text-slate-700 mb-3">Descricao</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-wrap">{project.description || "Sem descricao."}</p>
-              </CardContent>
-            </Card>
+          <div className="bg-white border rounded-lg p-4 space-y-3">
+            <h3 className="font-semibold">Progresso</h3>
+            <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-full bg-blue-600 rounded-full" style={{ width: `${project.progress || 0}%` }} />
+            </div>
+            <p className="text-center font-medium">{project.progress || 0}% concluído</p>
           </div>
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="cronograma">
-          <Card><CardContent className="p-0">
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Fase</TableHead><TableHead>Inicio</TableHead><TableHead>Fim</TableHead>
-                <TableHead>Progresso</TableHead><TableHead>Status</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {phases.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-slate-500">Nenhuma fase cadastrada</TableCell></TableRow>
-                ) : phases.map((ph) => (
-                  <TableRow key={String(ph.id)}>
-                    <TableCell className="font-medium">{String(ph.name || "")}</TableCell>
-                    <TableCell className="text-sm">{formatDateBR(ph.planned_start as string)}</TableCell>
-                    <TableCell className="text-sm">{formatDateBR(ph.planned_end as string)}</TableCell>
-                    <TableCell className="text-sm">{ph.progress_percent ? ph.progress_percent + "%" : "-"}</TableCell>
-                    <TableCell><StatusBadge status={String(ph.status || "pendente")} /></TableCell>
-                  </TableRow>
+      {tab === "medicoes" && (
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-semibold">Medições da Obra</h3>
+            <button onClick={() => setShowMForm(!showMForm)} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">+ Nova Medição</button>
+          </div>
+          {showMForm && (
+            <div className="bg-gray-50 p-4 rounded mb-4 grid grid-cols-2 gap-3">
+              <select value={mForm.phase_id} onChange={(e) => setMForm({ ...mForm, phase_id: e.target.value })} className="border rounded px-3 py-2">
+                <option value="">Selecione a fase</option>
+                {phases.map((p: Record<string, unknown>) => <option key={p.id as string} value={p.id as string}>{p.name as string}</option>)}
+              </select>
+              <input placeholder="% Concluído" type="number" value={mForm.percent_complete} onChange={(e) => setMForm({ ...mForm, percent_complete: e.target.value })} className="border rounded px-3 py-2" />
+              <input placeholder="Valor Medido (R$)" type="number" value={mForm.measured_value} onChange={(e) => setMForm({ ...mForm, measured_value: e.target.value })} className="border rounded px-3 py-2" />
+              <input placeholder="Observação" value={mForm.observation} onChange={(e) => setMForm({ ...mForm, observation: e.target.value })} className="border rounded px-3 py-2" />
+              <button onClick={() => createMeasurement.mutate({ project_id: id, phase_id: mForm.phase_id || undefined, percent_complete: Number(mForm.percent_complete) || 0, measured_value: Number(mForm.measured_value) || 0, observation: mForm.observation })} className="px-4 py-2 bg-green-600 text-white rounded col-span-2">Registrar Medição</button>
+            </div>
+          )}
+          <p className="text-xs text-gray-500 mb-4">Ao registrar uma medição, o sistema atualiza automaticamente o progresso da fase e gera reflexo financeiro.</p>
+          {measurements.length === 0 ? <p className="text-gray-500">Nenhuma medição registrada</p> : (
+            <table className="w-full border-collapse">
+              <thead><tr className="bg-gray-100"><th className="p-2 text-left">Data</th><th className="p-2 text-left">Fase</th><th className="p-2 text-right">% Concluído</th><th className="p-2 text-right">Valor</th><th className="p-2 text-left">Obs</th></tr></thead>
+              <tbody>
+                {measurements.map((m: Record<string, unknown>) => (
+                  <tr key={m.id as string} className="border-b">
+                    <td className="p-2">{formatDateBR(m.created_at as string)}</td>
+                    <td className="p-2">{m.phase_name as string || "-"}</td>
+                    <td className="p-2 text-right">{m.percent_complete as number}%</td>
+                    <td className="p-2 text-right">{formatBRL(m.measured_value as number)}</td>
+                    <td className="p-2 text-sm text-gray-500">{m.observation as string || "-"}</td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
-          </CardContent></Card>
-        </TabsContent>
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
 
-        <TabsContent value="financeiro">
-          <Card><CardContent className="p-0">
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Tipo</TableHead><TableHead>Descricao</TableHead><TableHead>Valor</TableHead>
-                <TableHead>Vencimento</TableHead><TableHead>Status</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {financial.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-slate-500">Nenhum lancamento</TableCell></TableRow>
-                ) : financial.map((f) => (
-                  <TableRow key={String(f.id)}>
-                    <TableCell><StatusBadge status={String(f.type === "receita" ? "recebido" : "atrasado")} /></TableCell>
-                    <TableCell className="font-medium">{String(f.description || "")}</TableCell>
-                    <TableCell className="font-semibold">{formatBRL(f.planned_amount || f.actual_amount)}</TableCell>
-                    <TableCell className="text-sm">{formatDateBR(f.due_date as string)}</TableCell>
-                    <TableCell><StatusBadge status={String(f.status || "pendente")} /></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent></Card>
-        </TabsContent>
-
-        <TabsContent value="diario">
-          <div className="space-y-3">
-            {diary.length === 0 ? (
-              <Card><CardContent className="py-8 text-center text-slate-500">Nenhum registro de diario</CardContent></Card>
-            ) : diary.map((d) => (
-              <Card key={String(d.id)}>
-                <CardContent className="pt-4 pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium">{formatDateBR(d.date as string)}</p>
-                      <p className="text-sm text-slate-600 mt-1">{String((d.description as string) || (d.activities as string) || "")}</p>
-                      {d.weather ? <p className="text-xs text-slate-400 mt-1">Clima: {String(d.weather)}</p> : null}
-                    </div>
+      {tab === "cronograma" && (
+        <div>
+          <h3 className="font-semibold mb-4">Fases / Cronograma</h3>
+          {phases.length === 0 ? <p className="text-gray-500">Nenhuma fase cadastrada</p> : (
+            <div className="space-y-3">
+              {phases.map((p: Record<string, unknown>) => (
+                <div key={p.id as string} className="bg-white border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium">{p.name as string}</span>
+                    <span className="text-sm">{p.progress_percent as number || 0}%</span>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-green-500 rounded-full" style={{ width: `${p.progress_percent as number || 0}%` }} />
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>{formatDateBR(p.start_date as string)}</span>
+                    <span>{formatDateBR(p.end_date as string)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "financeiro" && (
+        <div>
+          <h3 className="font-semibold mb-4">Financeiro da Obra</h3>
+          {entries.length === 0 ? <p className="text-gray-500">Nenhum lançamento</p> : (
+            <table className="w-full border-collapse">
+              <thead><tr className="bg-gray-100"><th className="p-2 text-left">Data</th><th className="p-2 text-left">Descrição</th><th className="p-2 text-left">Tipo</th><th className="p-2 text-right">Valor</th></tr></thead>
+              <tbody>
+                {entries.map((e: Record<string, unknown>) => (
+                  <tr key={e.id as string} className="border-b">
+                    <td className="p-2">{formatDateBR(e.due_date as string || e.created_at as string)}</td>
+                    <td className="p-2">{e.description as string}</td>
+                    <td className="p-2"><span className={`px-2 py-0.5 rounded text-xs ${e.type === "receita" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>{e.type as string}</span></td>
+                    <td className="p-2 text-right font-medium">{formatBRL(e.planned_amount as number || e.amount as number || 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {tab === "diario" && <div className="text-gray-500">Diário de obra aparecerá aqui.</div>}
     </div>
   )
 }

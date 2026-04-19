@@ -175,13 +175,20 @@ async def convert_lead(lead_id: str, data: LeadConvertRequest = None, db: AsyncS
     if lead.status == "fechado_ganho":
         raise HTTPException(status_code=400, detail="Lead já convertido")
 
-    # Create client from lead
+    # Create client from lead (inherit address)
     client = Client(
         name=lead.name,
         email=lead.email,
         phone=lead.phone,
         company_name=lead.company,
         person_type="fisica",
+        address_street=lead.address_street,
+        address_number=lead.address_number,
+        address_complement=lead.address_complement,
+        address_neighborhood=lead.address_neighborhood,
+        address_city=lead.address_city,
+        address_state=lead.address_state,
+        address_zip=lead.address_zip,
         created_by=current_user.id,
     )
     db.add(client)

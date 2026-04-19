@@ -5,9 +5,11 @@ from datetime import date, datetime, timezone, timedelta
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from typing import Optional
 from app.models.models import (
     User, Project, Lead, Contract, ContractInstallment,
-    FinancialEntry, PurchaseRequest, WorkTask, WorkDiary, WorkPhase
+    FinancialEntry, PurchaseRequest, WorkTask, WorkDiary, WorkPhase,
+    Client, Measurement,
 )
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboards"])
@@ -139,4 +141,167 @@ async def operational_dashboard(db: AsyncSession = Depends(get_db), current_user
         "projects_by_status": project_status_dict,
         "lead_pipeline": lead_pipeline_dict,
         "delayed_phases": delayed_phases,
+    }
+
+
+@router.get("/by-project/{project_id}")
+async def dashboard_by_project(project_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Dashboard data filtered by a specific project."""
+    project_result = await db.execute(select(Project).where(Project.id == project_id, Project.is_deleted.is_(False)))
+    project = project_result.scalar_one_or_none()
+    if not project:
+        return {"error": "Obra não encontrada"}
+
+    revenue_planned = (await db.execute(
+        select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0))
+        .where(FinancialEntry.is_deleted.is_(False), FinancialEntry.project_id == project_id, FinancialEntry.type == "receita")
+    )).scalar() or 0
+
+    revenue_received = (await db.execute(
+        select(func.coalesce(func.sum(FinancialEntry.actual_amount), 0))
+        .where(FinancialEntry.is_deleted.is_(False), FinancialEntry.project_id == project_id, FinancialEntry.type == "receita", FinancialEntry.status == "pago")
+    )).scalar() or 0
+
+    expenses_planned = (await db.execute(
+        select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0))
+        .where(FinancialEntry.is_deleted.is_(False), FinancialEntry.project_id == project_id, FinancialEntry.type == "despesa")
+    )).scalar() or 0
+
+    expenses_paid = (await db.execute(
+        select(func.coalesce(func.sum(FinancialEntry.actual_amount), 0))
+        .where(FinancialEntry.is_deleted.is_(False), FinancialEntry.project_id == project_id, FinancialEntry.type == "despesa", FinancialEntry.status == "pago")
+    )).scalar() or 0
+
+    phases_result = await db.execute(
+        select(WorkPhase).where(WorkPhase.project_id == project_id, WorkPhase.is_deleted.is_(False))
+    )
+    phases = phases_result.scalars().all()
+    total_progress = sum(p.progress_percent or 0 for p in phases) / max(len(phases), 1)
+
+    measurements_count = (await db.execute(
+        select(func.count()).select_from(Measurement).where(Measurement.project_id == project_id)
+    )).scalar() or 0
+
+    cat_result = await db.execute(
+        select(FinancialEntry.category, FinancialEntry.type, func.sum(FinancialEntry.planned_amount))
+        .where(FinancialEntry.is_deleted.is_(False), FinancialEntry.project_id == project_id)
+        .group_by(FinancialEntry.category, FinancialEntry.type)
+    )
+    categories = [{"category": r[0] or "Sem categoria", "type": r[1], "amount": float(r[2] or 0)} for r in cat_result.all()]
+
+    return {
+        "project_name": project.name,
+        "project_status": project.status,
+        "progress": round(total_progress, 1),
+        "revenue_planned": float(revenue_planned),
+        "revenue_received": float(revenue_received),
+        "expenses_planned": float(expenses_planned),
+        "expenses_paid": float(expenses_paid),
+        "balance": float(revenue_received) - float(expenses_paid),
+        "phases_count": len(phases),
+        "measurements_count": measurements_count,
+        "categories": categories,
+    }
+
+
+@router.get("/by-client/{client_id}")
+async def dashboard_by_client(client_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Dashboard data consolidated by client."""
+    client_result = await db.execute(select(Client).where(Client.id == client_id, Client.is_deleted.is_(False)))
+    client = client_result.scalar_one_or_none()
+    if not client:
+        return {"error": "Cliente não encontrado"}
+
+    projects_result = await db.execute(
+        select(Project).where(Project.client_id == client_id, Project.is_deleted.is_(False))
+    )
+    projects = projects_result.scalars().all()
+    project_ids = [p.id for p in projects]
+
+    contracts_count = (await db.execute(
+        select(func.count()).select_from(Contract).where(Contract.client_id == client_id, Contract.is_deleted.is_(False))
+    )).scalar() or 0
+
+    revenue = 0
+    expenses = 0
+    if project_ids:
+        revenue = float((await db.execute(
+            select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0))
+            .where(FinancialEntry.is_deleted.is_(False), FinancialEntry.project_id.in_(project_ids), FinancialEntry.type == "receita")
+        )).scalar() or 0)
+        expenses = float((await db.execute(
+            select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0))
+            .where(FinancialEntry.is_deleted.is_(False), FinancialEntry.project_id.in_(project_ids), FinancialEntry.type == "despesa")
+        )).scalar() or 0)
+
+    today = date.today()
+    overdue_result = await db.execute(
+        select(func.count(), func.coalesce(func.sum(ContractInstallment.amount), 0))
+        .select_from(ContractInstallment)
+        .join(Contract, ContractInstallment.contract_id == Contract.id)
+        .where(Contract.client_id == client_id,
+               ContractInstallment.status.in_(["pendente", "atrasada"]),
+               ContractInstallment.due_date < today)
+    )
+    overdue_row = overdue_result.one()
+
+    return {
+        "client_name": client.name,
+        "projects_count": len(projects),
+        "contracts_count": contracts_count,
+        "projects": [{"id": p.id, "name": p.name, "status": p.status} for p in projects],
+        "revenue_total": revenue,
+        "expenses_total": expenses,
+        "balance": revenue - expenses,
+        "overdue_count": overdue_row[0],
+        "overdue_amount": float(overdue_row[1]),
+    }
+
+
+@router.get("/charts/pie")
+async def dashboard_pie_charts(
+    project_id: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Data for pie charts: revenue vs expenses, project status, installment status."""
+    base_filter = FinancialEntry.is_deleted.is_(False)
+
+    rev_total = (await db.execute(
+        select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0))
+        .where(base_filter, FinancialEntry.type == "receita")
+    )).scalar() or 0
+    exp_total = (await db.execute(
+        select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0))
+        .where(base_filter, FinancialEntry.type == "despesa")
+    )).scalar() or 0
+
+    project_status = await db.execute(
+        select(Project.status, func.count())
+        .where(Project.is_deleted.is_(False))
+        .group_by(Project.status)
+    )
+    project_status_data = [{"label": r[0].replace("_", " ").title(), "value": r[1]} for r in project_status.all()]
+
+    installment_status = await db.execute(
+        select(ContractInstallment.status, func.count())
+        .group_by(ContractInstallment.status)
+    )
+    installment_data = [{"label": r[0].replace("_", " ").title(), "value": r[1]} for r in installment_status.all()]
+
+    cat_result = await db.execute(
+        select(FinancialEntry.category, func.sum(FinancialEntry.planned_amount))
+        .where(base_filter, FinancialEntry.type == "despesa")
+        .group_by(FinancialEntry.category)
+    )
+    expense_categories = [{"label": r[0] or "Sem categoria", "value": float(r[1] or 0)} for r in cat_result.all()]
+
+    return {
+        "revenue_vs_expenses": [
+            {"label": "Receitas", "value": float(rev_total)},
+            {"label": "Despesas", "value": float(exp_total)},
+        ],
+        "projects_by_status": project_status_data,
+        "installments_by_status": installment_data,
+        "expenses_by_category": expense_categories,
     }

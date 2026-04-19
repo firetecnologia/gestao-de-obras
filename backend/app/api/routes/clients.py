@@ -6,7 +6,7 @@ from typing import Optional
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.models.models import User, Client, ClientContact
+from app.models.models import User, Client, ClientContact, ClientBankData
 from app.schemas.clients import (
     ClientCreate, ClientUpdate, ClientResponse,
     ClientContactCreate, ClientContactResponse,
@@ -145,3 +145,43 @@ async def remove_contact(
     await db.delete(contact)
     await db.flush()
     return MessageResponse(message="Contato removido com sucesso")
+
+
+# ==================== BANK DATA ====================
+
+@router.get("/{client_id}/bank-data")
+async def list_bank_data(client_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    result = await db.execute(select(Client).where(Client.id == client_id, Client.is_deleted.is_(False)))
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    result = await db.execute(select(ClientBankData).where(ClientBankData.client_id == client_id))
+    items = result.scalars().all()
+    return [{"id": b.id, "client_id": b.client_id, "bank_name": b.bank_name,
+             "bank_agency": b.bank_agency, "bank_account": b.bank_account,
+             "bank_account_type": b.bank_account_type, "pix_key": b.pix_key,
+             "pix_key_type": b.pix_key_type, "holder_name": b.holder_name,
+             "holder_cpf_cnpj": b.holder_cpf_cnpj, "is_primary": b.is_primary,
+             "notes": b.notes} for b in items]
+
+
+@router.post("/{client_id}/bank-data", status_code=status.HTTP_201_CREATED)
+async def add_bank_data(client_id: str, data: dict, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    result = await db.execute(select(Client).where(Client.id == client_id, Client.is_deleted.is_(False)))
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    bank = ClientBankData(client_id=client_id, **{k: v for k, v in data.items() if k != "client_id"})
+    db.add(bank)
+    await db.flush()
+    await db.refresh(bank)
+    return {"id": bank.id, "message": "Dados bancários adicionados"}
+
+
+@router.delete("/{client_id}/bank-data/{bank_id}", response_model=MessageResponse)
+async def delete_bank_data(client_id: str, bank_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    result = await db.execute(select(ClientBankData).where(ClientBankData.id == bank_id, ClientBankData.client_id == client_id))
+    bank = result.scalar_one_or_none()
+    if not bank:
+        raise HTTPException(status_code=404, detail="Dados bancários não encontrados")
+    await db.delete(bank)
+    await db.flush()
+    return MessageResponse(message="Dados bancários removidos")

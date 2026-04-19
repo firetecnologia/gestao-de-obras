@@ -10,6 +10,7 @@ from app.api.routes import (
     auth, users, clients, suppliers, projects, leads,
     proposals, contracts, planning, purchases, diary,
     financial, documents, dashboard, closing, budget,
+    contract_templates, measurements, sinapi, purchase_receipts,
 )
 
 
@@ -63,6 +64,10 @@ app.include_router(budget.service_catalog_router, prefix="/api")
 app.include_router(budget.material_catalog_router, prefix="/api")
 app.include_router(budget.composition_catalog_router, prefix="/api")
 app.include_router(budget.budget_router, prefix="/api")
+app.include_router(contract_templates.router, prefix="/api")
+app.include_router(measurements.router, prefix="/api")
+app.include_router(sinapi.router, prefix="/api")
+app.include_router(purchase_receipts.router, prefix="/api")
 
 
 @app.get("/healthz")
