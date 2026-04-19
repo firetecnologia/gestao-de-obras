@@ -11,7 +11,6 @@ export default function DashboardPage() {
   const [selectedClient, setSelectedClient] = useState("")
 
   const { data: execData } = useQuery({ queryKey: ["dashboard-executive"], queryFn: dashboardApi.executive })
-  const { data: opData } = useQuery({ queryKey: ["dashboard-operational"], queryFn: dashboardApi.operational })
   const { data: pieData } = useQuery({ queryKey: ["dashboard-pie"], queryFn: dashboardApi.pieCharts })
   const { data: projectsData } = useQuery({ queryKey: ["projects-list"], queryFn: () => projectsApi.list() })
   const { data: clientsData } = useQuery({ queryKey: ["clients-list"], queryFn: () => clientsApi.list() })
@@ -19,10 +18,9 @@ export default function DashboardPage() {
   const { data: clientDash } = useQuery({ queryKey: ["dashboard-client", selectedClient], queryFn: () => dashboardApi.byClient(selectedClient), enabled: !!selectedClient })
 
   const exec = execData?.data || {}
-  const op = opData?.data || {}
   const pie = pieData?.data || {}
-  const projects = projectsData?.data || []
-  const clients = clientsData?.data || []
+  const projects = projectsData?.data?.items || []
+  const clients = clientsData?.data?.items || []
 
   return (
     <div className="p-6">
@@ -41,23 +39,23 @@ export default function DashboardPage() {
       {view === "geral" && (
         <>
           <div className="grid grid-cols-4 gap-4 mb-6">
-            <Card label="Receita Total" value={formatBRL(exec.total_revenue || 0)} />
-            <Card label="Despesa Total" value={formatBRL(exec.total_expenses || 0)} />
-            <Card label="Obras Ativas" value={op.active_projects || 0} />
-            <Card label="Leads Abertos" value={op.open_leads || 0} />
+            <Card label="Receita Recebida" value={formatBRL(exec.revenue_received || 0)} color="green" />
+            <Card label="Custos Totais" value={formatBRL(exec.total_costs || 0)} color="red" />
+            <Card label="Lucro" value={formatBRL(exec.profit || 0)} color={exec.profit >= 0 ? "green" : "red"} />
+            <Card label="Obras Ativas" value={exec.active_projects || 0} />
           </div>
           <div className="grid grid-cols-4 gap-4 mb-6">
-            <Card label="Propostas Pendentes" value={op.pending_proposals || 0} />
-            <Card label="Contratos Ativos" value={op.active_contracts || 0} />
-            <Card label="Parcelas Vencidas" value={op.overdue_installments || 0} color="red" />
-            <Card label="Saldo" value={formatBRL((exec.total_revenue || 0) - (exec.total_expenses || 0))} color={(exec.total_revenue || 0) - (exec.total_expenses || 0) >= 0 ? "green" : "red"} />
+            <Card label="Obras Atrasadas" value={exec.delayed_projects || 0} color="red" />
+            <Card label="Pipeline (Leads)" value={exec.pipeline_leads || 0} />
+            <Card label="Parcelas Vencidas" value={exec.overdue_installments || 0} color="red" />
+            <Card label="Contratos no Mes" value={exec.contracts_this_month || 0} />
           </div>
           {pie.revenue_vs_expenses && (
             <div className="grid grid-cols-2 gap-6">
               <PieChart title="Receitas x Despesas" data={pie.revenue_vs_expenses} />
-              <PieChart title="Status das Obras" data={pie.project_status} />
-              <PieChart title="Parcelas" data={pie.installment_status} />
-              <PieChart title="Categorias de Custo" data={pie.expense_categories} />
+              <PieChart title="Status das Obras" data={pie.projects_by_status} />
+              <PieChart title="Parcelas" data={pie.installments_by_status} />
+              <PieChart title="Categorias de Custo" data={pie.expenses_by_category} />
             </div>
           )}
         </>
@@ -71,8 +69,8 @@ export default function DashboardPage() {
           </select>
           {projectDash?.data && (
             <div className="grid grid-cols-4 gap-4 mb-6">
-              <Card label="Receitas" value={formatBRL(projectDash.data.total_revenue || 0)} />
-              <Card label="Despesas" value={formatBRL(projectDash.data.total_expenses || 0)} />
+              <Card label="Receitas" value={formatBRL(projectDash.data.revenue_received || 0)} />
+              <Card label="Despesas" value={formatBRL(projectDash.data.expenses_paid || 0)} />
               <Card label="Saldo" value={formatBRL(projectDash.data.balance || 0)} color={projectDash.data.balance >= 0 ? "green" : "red"} />
               <Card label="Progresso" value={`${projectDash.data.progress || 0}%`} />
             </div>
@@ -88,9 +86,9 @@ export default function DashboardPage() {
           </select>
           {clientDash?.data && (
             <div className="grid grid-cols-4 gap-4 mb-6">
-              <Card label="Total Obras" value={clientDash.data.total_projects || 0} />
-              <Card label="Receitas" value={formatBRL(clientDash.data.total_revenue || 0)} />
-              <Card label="Despesas" value={formatBRL(clientDash.data.total_expenses || 0)} />
+              <Card label="Total Obras" value={clientDash.data.projects_count || 0} />
+              <Card label="Receitas" value={formatBRL(clientDash.data.revenue_total || 0)} />
+              <Card label="Despesas" value={formatBRL(clientDash.data.expenses_total || 0)} />
               <Card label="Saldo" value={formatBRL(clientDash.data.balance || 0)} color={clientDash.data.balance >= 0 ? "green" : "red"} />
             </div>
           )}
@@ -110,27 +108,26 @@ function Card({ label, value, color }: { label: string; value: string | number; 
   )
 }
 
-function PieChart({ title, data }: { title: string; data: Record<string, number> }) {
-  if (!data) return null
-  const entries = Object.entries(data)
-  const total = entries.reduce((sum, [, v]) => sum + v, 0)
+function PieChart({ title, data }: { title: string; data: Array<{ label: string; value: number }> }) {
+  if (!data || data.length === 0) return null
+  const total = data.reduce((sum, item) => sum + item.value, 0)
   const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#6B7280"]
   return (
     <div className="bg-white border rounded-lg p-4">
       <h3 className="font-medium mb-3">{title}</h3>
       <div className="space-y-2">
-        {entries.map(([label, value], i) => (
-          <div key={label} className="flex items-center gap-2">
+        {data.map((item, i) => (
+          <div key={item.label} className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[i % colors.length] }} />
-            <span className="text-sm flex-1">{label}</span>
-            <span className="text-sm font-medium">{total > 0 ? Math.round((value / total) * 100) : 0}%</span>
+            <span className="text-sm flex-1">{item.label}</span>
+            <span className="text-sm font-medium">{total > 0 ? Math.round((item.value / total) * 100) : 0}%</span>
           </div>
         ))}
       </div>
       {total > 0 && (
         <div className="mt-3 h-4 rounded-full overflow-hidden bg-gray-100 flex">
-          {entries.map(([label, value], i) => (
-            <div key={label} style={{ width: `${(value / total) * 100}%`, backgroundColor: colors[i % colors.length] }} className="h-full" />
+          {data.map((item, i) => (
+            <div key={item.label} style={{ width: `${(item.value / total) * 100}%`, backgroundColor: colors[i % colors.length] }} className="h-full" />
           ))}
         </div>
       )}

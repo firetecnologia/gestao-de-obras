@@ -134,11 +134,11 @@ async def create_receipt(
             status=item_data.status,
             notes=item_data.notes,
         )
-        if item_data.quantity_received < item_data.quantity_expected:
-            ri.status = "parcial"
-            has_divergence = True
-        elif item_data.quantity_received == 0:
+        if item_data.quantity_received == 0 and item_data.quantity_expected > 0:
             ri.status = "nao_recebido"
+            has_divergence = True
+        elif item_data.quantity_received < item_data.quantity_expected:
+            ri.status = "parcial"
             has_divergence = True
         db.add(ri)
         receipt_items.append(ri)

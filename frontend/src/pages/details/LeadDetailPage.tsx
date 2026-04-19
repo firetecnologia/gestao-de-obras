@@ -14,7 +14,7 @@ export default function LeadDetailPage() {
   const { showToast } = useToast()
   const qc = useQueryClient()
   const [tab, setTab] = useState<Tab>("resumo")
-  const [interaction, setInteraction] = useState({ type: "email", notes: "" })
+  const [interaction, setInteraction] = useState({ type: "email", description: "" })
 
   const { data } = useQuery({ queryKey: ["lead", id], queryFn: () => leadsApi.get(id!) })
   const lead = data?.data
@@ -25,7 +25,7 @@ export default function LeadDetailPage() {
   })
   const addInteractionMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => leadsApi.addInteraction(id!, d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["lead", id] }); setInteraction({ type: "email", notes: "" }); showToast("Interação registrada") },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["lead", id] }); setInteraction({ type: "email", description: "" }); showToast("Interação registrada") },
   })
 
   if (!lead) return <div className="p-6">Carregando...</div>
@@ -96,7 +96,7 @@ export default function LeadDetailPage() {
                 <option value="meeting">Reunião</option>
                 <option value="whatsapp">WhatsApp</option>
               </select>
-              <input placeholder="Notas" value={interaction.notes} onChange={(e) => setInteraction({ ...interaction, notes: e.target.value })} className="flex-1 border rounded px-3 py-2" />
+              <input placeholder="Descrição" value={interaction.description} onChange={(e) => setInteraction({ ...interaction, description: e.target.value })} className="flex-1 border rounded px-3 py-2" />
               <button onClick={() => addInteractionMut.mutate(interaction)} className="px-4 py-2 bg-blue-600 text-white rounded">Registrar</button>
             </div>
           </div>

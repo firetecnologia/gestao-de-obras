@@ -40,17 +40,17 @@ export default function CadastrosPage() {
 function ServicesTab() {
   const { data, isLoading } = useQuery({ queryKey: ["catalog-services"], queryFn: () => catalogApi.listServices() })
   const qc = useQueryClient()
-  const { toast } = useToast()
+  const { showToast } = useToast()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: "", description: "", unit: "", cost_price: "", sale_price: "", category: "" })
 
   const createMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => catalogApi.createService(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-services"] }); setShowForm(false); toast({ title: "Serviço criado" }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-services"] }); setShowForm(false); showToast("Serviço criado") },
   })
   const deleteMut = useMutation({
     mutationFn: (id: string) => catalogApi.deleteService(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-services"] }); toast({ title: "Serviço removido" }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-services"] }); showToast("Serviço removido") },
   })
 
   const items = data?.data || []
@@ -95,17 +95,17 @@ function ServicesTab() {
 function MaterialsTab() {
   const { data, isLoading } = useQuery({ queryKey: ["catalog-materials"], queryFn: () => catalogApi.listMaterials() })
   const qc = useQueryClient()
-  const { toast } = useToast()
+  const { showToast } = useToast()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: "", description: "", unit: "", cost_price: "", sale_price: "", category: "", brand: "" })
 
   const createMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => catalogApi.createMaterial(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-materials"] }); setShowForm(false); toast({ title: "Material criado" }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-materials"] }); setShowForm(false); showToast("Material criado") },
   })
   const deleteMut = useMutation({
     mutationFn: (id: string) => catalogApi.deleteMaterial(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-materials"] }); toast({ title: "Material removido" }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-materials"] }); showToast("Material removido") },
   })
 
   const items = data?.data || []
@@ -151,17 +151,17 @@ function MaterialsTab() {
 function CompositionsTab() {
   const { data, isLoading } = useQuery({ queryKey: ["catalog-compositions"], queryFn: () => catalogApi.listCompositions() })
   const qc = useQueryClient()
-  const { toast } = useToast()
+  const { showToast } = useToast()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: "", description: "", unit: "", category: "" })
 
   const createMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => catalogApi.createComposition(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-compositions"] }); setShowForm(false); toast({ title: "Composição criada" }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-compositions"] }); setShowForm(false); showToast("Composição criada") },
   })
   const deleteMut = useMutation({
     mutationFn: (id: string) => catalogApi.deleteComposition(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-compositions"] }); toast({ title: "Composição removida" }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-compositions"] }); showToast("Composição removida") },
   })
 
   const items = data?.data || []
@@ -203,17 +203,17 @@ function CompositionsTab() {
 function TemplatesTab() {
   const { data, isLoading } = useQuery({ queryKey: ["contract-templates"], queryFn: () => contractTemplatesApi.list() })
   const qc = useQueryClient()
-  const { toast } = useToast()
+  const { showToast } = useToast()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: "", description: "", content: "" })
 
   const createMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => contractTemplatesApi.create(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["contract-templates"] }); setShowForm(false); toast({ title: "Modelo criado" }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["contract-templates"] }); setShowForm(false); showToast("Modelo criado") },
   })
   const deleteMut = useMutation({
     mutationFn: (id: string) => contractTemplatesApi.delete(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["contract-templates"] }); toast({ title: "Modelo removido" }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["contract-templates"] }); showToast("Modelo removido") },
   })
 
   const items = data?.data || []
@@ -255,13 +255,13 @@ function SinapiTab() {
   const [search, setSearch] = useState("")
   const { data: itemsData } = useQuery({ queryKey: ["sinapi-items", search], queryFn: () => sinapiApi.searchItems({ search, limit: 50 }), enabled: search.length > 2 })
   const qc = useQueryClient()
-  const { toast } = useToast()
+  const { showToast } = useToast()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: "", reference_date: "", url: "" })
 
   const createMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => sinapiApi.createSource(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["sinapi-sources"] }); setShowForm(false); toast({ title: "Fonte criada" }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["sinapi-sources"] }); setShowForm(false); showToast("Fonte criada") },
   })
 
   const sources = sourcesData?.data || []

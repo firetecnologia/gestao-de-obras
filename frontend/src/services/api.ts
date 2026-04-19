@@ -280,7 +280,7 @@ export const contractTemplatesApi = {
 
 // Measurements
 export const measurementsApi = {
-  list: (projectId: string) => api.get(`/measurements/projects/${projectId}`),
+  list: (projectId: string) => api.get(`/measurements`, { params: { project_id: projectId } }),
   create: (data: Record<string, unknown>) => api.post("/measurements", data),
   update: (id: string, data: Record<string, unknown>) => api.put(`/measurements/${id}`, data),
   delete: (id: string) => api.delete(`/measurements/${id}`),
@@ -297,10 +297,10 @@ export const sinapiApi = {
 
 // Purchase Receipts
 export const purchaseReceiptsApi = {
-  list: (orderId: string) => api.get(`/purchase-receipts/orders/${orderId}`),
-  create: (data: Record<string, unknown>) => api.post("/purchase-receipts", data),
-  update: (id: string, data: Record<string, unknown>) => api.put(`/purchase-receipts/${id}`, data),
-  delete: (id: string) => api.delete(`/purchase-receipts/${id}`),
+  list: (orderId: string) => api.get(`/purchases/receipts`, { params: { order_id: orderId } }),
+  create: (data: Record<string, unknown>) => api.post("/purchases/receipts", data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/purchases/receipts/${id}`, data),
+  delete: (id: string) => api.delete(`/purchases/receipts/${id}`),
 }
 
 // Client Bank Data
