@@ -144,13 +144,14 @@ async def create_receipt(
         receipt_items.append(ri)
     await db.flush()
 
-    # AUTOMATION: Update order status based on receipt
-    if has_divergence:
-        order.status = "entregue_parcial"
-        receipt.status = "parcial"
-    else:
-        order.status = "entregue"
-        receipt.status = "completo"
+    # AUTOMATION: Update order status based on receipt (only if items were provided)
+    if receipt_items:
+        if has_divergence:
+            order.status = "entregue_parcial"
+            receipt.status = "parcial"
+        else:
+            order.status = "entregue"
+            receipt.status = "completo"
     await db.flush()
 
     await db.refresh(receipt)

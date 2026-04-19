@@ -53,7 +53,7 @@ function ServicesTab() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-services"] }); showToast("Serviço removido") },
   })
 
-  const items = data?.data || []
+  const items = data?.data?.items || data?.data || []
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -108,7 +108,7 @@ function MaterialsTab() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-materials"] }); showToast("Material removido") },
   })
 
-  const items = data?.data || []
+  const items = data?.data?.items || data?.data || []
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -164,7 +164,7 @@ function CompositionsTab() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog-compositions"] }); showToast("Composição removida") },
   })
 
-  const items = data?.data || []
+  const items = data?.data?.items || data?.data || []
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -216,7 +216,7 @@ function TemplatesTab() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["contract-templates"] }); showToast("Modelo removido") },
   })
 
-  const items = data?.data || []
+  const items = data?.data?.items || data?.data || []
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -264,8 +264,8 @@ function SinapiTab() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["sinapi-sources"] }); setShowForm(false); showToast("Fonte criada") },
   })
 
-  const sources = sourcesData?.data || []
-  const items = itemsData?.data || []
+  const sources = sourcesData?.data?.items || sourcesData?.data || []
+  const items = itemsData?.data?.items || itemsData?.data || []
 
   return (
     <div>

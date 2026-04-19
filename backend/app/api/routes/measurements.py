@@ -82,8 +82,8 @@ async def list_measurements(
         items.append(MeasurementResponse(
             id=m.id, project_id=m.project_id, phase_id=m.phase_id,
             measurement_number=m.measurement_number, date=m.date,
-            percent_complete=float(m.percent_complete) if m.percent_complete else None,
-            measured_value=float(m.measured_value) if m.measured_value else None,
+            percent_complete=float(m.percent_complete) if m.percent_complete is not None else None,
+            measured_value=float(m.measured_value) if m.measured_value is not None else None,
             notes=m.notes, created_at=m.created_at, phase_name=phase_name,
         ))
 
@@ -157,8 +157,8 @@ async def create_measurement(
         id=measurement.id, project_id=measurement.project_id,
         phase_id=measurement.phase_id, measurement_number=measurement.measurement_number,
         date=measurement.date,
-        percent_complete=float(measurement.percent_complete) if measurement.percent_complete else None,
-        measured_value=float(measurement.measured_value) if measurement.measured_value else None,
+        percent_complete=float(measurement.percent_complete) if measurement.percent_complete is not None else None,
+        measured_value=float(measurement.measured_value) if measurement.measured_value is not None else None,
         notes=measurement.notes, created_at=measurement.created_at,
     )
 
@@ -182,8 +182,8 @@ async def update_measurement(
         id=measurement.id, project_id=measurement.project_id,
         phase_id=measurement.phase_id, measurement_number=measurement.measurement_number,
         date=measurement.date,
-        percent_complete=float(measurement.percent_complete) if measurement.percent_complete else None,
-        measured_value=float(measurement.measured_value) if measurement.measured_value else None,
+        percent_complete=float(measurement.percent_complete) if measurement.percent_complete is not None else None,
+        measured_value=float(measurement.measured_value) if measurement.measured_value is not None else None,
         notes=measurement.notes, created_at=measurement.created_at,
     )
 

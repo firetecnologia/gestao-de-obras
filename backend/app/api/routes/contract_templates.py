@@ -169,21 +169,30 @@ async def generate_contract_from_template(
     for key, value in replacements.items():
         content = content.replace("{{" + key + "}}", str(value))
 
+    # Extract values from ORM objects before retry loop to avoid MissingGreenlet after rollback
+    client_name = client.name or ""
+    client_id = client.id
+    proposal_id = data.proposal_id
+    proposal_total = float(proposal.total_price or 0) if proposal else 0
+    scope = content[:500] if content else None
+    user_id = current_user.id
+
     # Create contract with retry for code uniqueness
     max_retries = 3
+    contract = None
     for attempt in range(max_retries):
         count = (await db.execute(select(func.count()).select_from(Contract))).scalar() or 0
         code = f"CTR-{count + 1 + attempt:04d}"
         contract = Contract(
             code=code,
-            title=f"Contrato - {client.name}",
-            client_id=client.id,
-            proposal_id=data.proposal_id,
+            title=f"Contrato - {client_name}",
+            client_id=client_id,
+            proposal_id=proposal_id,
             description=content,
-            scope_summary=content[:500] if content else None,
-            total_value=float(proposal.total_price or 0) if proposal else 0,
+            scope_summary=scope,
+            total_value=proposal_total,
             status="rascunho",
-            created_by=current_user.id,
+            created_by=user_id,
         )
         db.add(contract)
         try:
