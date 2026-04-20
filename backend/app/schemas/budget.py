@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 
@@ -40,7 +40,7 @@ class ServiceCatalogUpdate(BaseModel):
 
 class ServiceCatalogResponse(ServiceCatalogBase):
     id: str
-    created_at: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -80,7 +80,7 @@ class MaterialCatalogUpdate(BaseModel):
 
 class MaterialCatalogResponse(MaterialCatalogBase):
     id: str
-    created_at: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -138,7 +138,7 @@ class CompositionCatalogResponse(CompositionCatalogBase):
     total_cost: Decimal = Decimal("0")
     total_price: Decimal = Decimal("0")
     items: Optional[List[CompositionItemResponse]] = []
-    created_at: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

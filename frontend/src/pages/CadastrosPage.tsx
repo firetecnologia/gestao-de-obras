@@ -288,8 +288,8 @@ function SinapiTab() {
             <div className="space-y-2">
               {sources.map((s: Record<string, unknown>) => (
                 <div key={s.id as string} className="flex items-center justify-between bg-white border rounded p-3">
-                  <div><span className="font-medium">{s.name as string}</span> <span className="text-gray-500 text-sm ml-2">{s.reference_date as string}</span></div>
-                  <span className="text-sm text-gray-400">{(s.item_count as number) || 0} itens</span>
+                  <div><span className="font-medium">{s.name as string}</span> <span className="text-gray-500 text-sm ml-2">{s.reference_month as string}</span></div>
+                  <span className="text-sm text-gray-400">{(s.total_items as number) || 0} itens</span>
                 </div>
               ))}
             </div>

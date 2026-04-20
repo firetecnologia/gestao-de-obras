@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from datetime import date, datetime, timezone, timedelta
@@ -150,7 +150,7 @@ async def dashboard_by_project(project_id: str, db: AsyncSession = Depends(get_d
     project_result = await db.execute(select(Project).where(Project.id == project_id, Project.is_deleted.is_(False)))
     project = project_result.scalar_one_or_none()
     if not project:
-        return {"error": "Obra não encontrada"}
+        raise HTTPException(status_code=404, detail="Obra não encontrada")
 
     revenue_planned = (await db.execute(
         select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0))
@@ -210,7 +210,7 @@ async def dashboard_by_client(client_id: str, db: AsyncSession = Depends(get_db)
     client_result = await db.execute(select(Client).where(Client.id == client_id, Client.is_deleted.is_(False)))
     client = client_result.scalar_one_or_none()
     if not client:
-        return {"error": "Cliente não encontrado"}
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
 
     projects_result = await db.execute(
         select(Project).where(Project.client_id == client_id, Project.is_deleted.is_(False))

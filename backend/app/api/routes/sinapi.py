@@ -136,7 +136,8 @@ async def import_sinapi_csv(
     # Save file
     upload_dir = os.path.join(settings.UPLOAD_DIR, "sinapi")
     os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(upload_dir, f"{source_id}_{file.filename}")
+    safe_filename = os.path.basename(file.filename or "upload.csv")
+    file_path = os.path.join(upload_dir, f"{source_id}_{safe_filename}")
     with open(file_path, "wb") as f:
         f.write(content)
     source.file_path = file_path
