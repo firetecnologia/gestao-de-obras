@@ -108,18 +108,18 @@ async def import_sinapi_csv(
     reader = csv.DictReader(io.StringIO(text), delimiter=";")
     count = 0
     for row in reader:
-        code = row.get("code", row.get("CODIGO", row.get("codigo", ""))).strip()
-        description = row.get("description", row.get("DESCRICAO", row.get("descricao", ""))).strip()
+        code = (row.get("code") or row.get("CODIGO") or row.get("codigo") or "").strip()
+        description = (row.get("description") or row.get("DESCRICAO") or row.get("descricao") or "").strip()
         if not code or not description:
             continue
-        unit = row.get("unit", row.get("UNIDADE", row.get("unidade", ""))).strip()
-        cost_str = row.get("unit_cost", row.get("CUSTO", row.get("preco", "0"))).strip().replace(".", "").replace(",", ".")
+        unit = (row.get("unit") or row.get("UNIDADE") or row.get("unidade") or "").strip()
+        cost_str = (row.get("unit_cost") or row.get("CUSTO") or row.get("preco") or "0").strip().replace(".", "").replace(",", ".")
         try:
             unit_cost = float(cost_str) if cost_str else 0
         except ValueError:
             unit_cost = 0
-        category = row.get("category", row.get("CATEGORIA", row.get("classe", ""))).strip()
-        origin = row.get("origin", row.get("TIPO", row.get("tipo", ""))).strip()
+        category = (row.get("category") or row.get("CATEGORIA") or row.get("classe") or "").strip()
+        origin = (row.get("origin") or row.get("TIPO") or row.get("tipo") or "").strip()
 
         item = SinapiItem(
             source_id=source_id, code=code, description=description,

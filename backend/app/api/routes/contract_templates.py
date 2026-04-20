@@ -177,7 +177,7 @@ async def generate_contract_from_template(
     scope = content[:500] if content else None
     user_id = current_user.id
 
-    # Create contract with retry for code uniqueness
+    # Create contract with retry for code uniqueness using savepoints
     max_retries = 3
     contract = None
     for attempt in range(max_retries):
@@ -194,12 +194,13 @@ async def generate_contract_from_template(
             status="rascunho",
             created_by=user_id,
         )
+        nested = await db.begin_nested()
         db.add(contract)
         try:
-            await db.flush()
+            await nested.commit()
             break
         except IntegrityError:
-            await db.rollback()
+            await nested.rollback()
             if attempt == max_retries - 1:
                 raise HTTPException(status_code=409, detail="Não foi possível gerar código único para o contrato")
             continue

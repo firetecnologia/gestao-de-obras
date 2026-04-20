@@ -266,16 +266,15 @@ async def dashboard_pie_charts(
 ):
     """Data for pie charts: revenue vs expenses, project status, installment status."""
     base_filter = FinancialEntry.is_deleted.is_(False)
-    project_filter = FinancialEntry.project_id == project_id if project_id else True
 
-    rev_total = (await db.execute(
-        select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0))
-        .where(base_filter, project_filter, FinancialEntry.type == "receita")
-    )).scalar() or 0
-    exp_total = (await db.execute(
-        select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0))
-        .where(base_filter, project_filter, FinancialEntry.type == "despesa")
-    )).scalar() or 0
+    rev_query = select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0)).where(base_filter, FinancialEntry.type == "receita")
+    exp_query = select(func.coalesce(func.sum(FinancialEntry.planned_amount), 0)).where(base_filter, FinancialEntry.type == "despesa")
+    if project_id:
+        rev_query = rev_query.where(FinancialEntry.project_id == project_id)
+        exp_query = exp_query.where(FinancialEntry.project_id == project_id)
+
+    rev_total = (await db.execute(rev_query)).scalar() or 0
+    exp_total = (await db.execute(exp_query)).scalar() or 0
 
     project_status_query = select(Project.status, func.count()).where(Project.is_deleted.is_(False))
     if project_id:
