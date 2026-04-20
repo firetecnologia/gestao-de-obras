@@ -16,15 +16,15 @@ export default function ProjectDetailPage() {
 
   const { data } = useQuery({ queryKey: ["project", id], queryFn: () => projectsApi.get(id!) })
   const { data: measurementsData } = useQuery({ queryKey: ["measurements", id], queryFn: () => measurementsApi.list(id!), enabled: tab === "medicoes" })
-  const { data: phasesData } = useQuery({ queryKey: ["phases", id], queryFn: () => planningApi.getPhases(id!), enabled: tab === "cronograma" })
+  const { data: phasesData } = useQuery({ queryKey: ["phases", id], queryFn: () => planningApi.getPhases(id!), enabled: tab === "cronograma" || tab === "medicoes" })
   const { data: finData } = useQuery({ queryKey: ["project-financial", id], queryFn: () => financialApi.listEntries({ project_id: id }), enabled: tab === "financeiro" })
 
   const project = data?.data
-  const measurements = measurementsData?.data || []
-  const phases = phasesData?.data || []
-  const entries = finData?.data || []
+  const measurements = measurementsData?.data?.items || measurementsData?.data || []
+  const phases = phasesData?.data?.items || phasesData?.data || []
+  const entries = finData?.data?.items || finData?.data || []
 
-  const [mForm, setMForm] = useState({ phase_id: "", percent_complete: "", measured_value: "", observation: "" })
+  const [mForm, setMForm] = useState({ phase_id: "", percent_complete: "", measured_value: "", notes: "", date: new Date().toISOString().split("T")[0] })
   const [showMForm, setShowMForm] = useState(false)
 
   const createMeasurement = useMutation({
@@ -89,8 +89,9 @@ export default function ProjectDetailPage() {
               </select>
               <input placeholder="% Concluído" type="number" value={mForm.percent_complete} onChange={(e) => setMForm({ ...mForm, percent_complete: e.target.value })} className="border rounded px-3 py-2" />
               <input placeholder="Valor Medido (R$)" type="number" value={mForm.measured_value} onChange={(e) => setMForm({ ...mForm, measured_value: e.target.value })} className="border rounded px-3 py-2" />
-              <input placeholder="Observação" value={mForm.observation} onChange={(e) => setMForm({ ...mForm, observation: e.target.value })} className="border rounded px-3 py-2" />
-              <button onClick={() => createMeasurement.mutate({ project_id: id, phase_id: mForm.phase_id || undefined, percent_complete: Number(mForm.percent_complete) || 0, measured_value: Number(mForm.measured_value) || 0, observation: mForm.observation })} className="px-4 py-2 bg-green-600 text-white rounded col-span-2">Registrar Medição</button>
+              <input type="date" value={mForm.date} onChange={(e) => setMForm({ ...mForm, date: e.target.value })} className="border rounded px-3 py-2" />
+              <input placeholder="Observação" value={mForm.notes} onChange={(e) => setMForm({ ...mForm, notes: e.target.value })} className="border rounded px-3 py-2" />
+              <button onClick={() => createMeasurement.mutate({ project_id: id, phase_id: mForm.phase_id || undefined, date: mForm.date, percent_complete: Number(mForm.percent_complete) || 0, measured_value: Number(mForm.measured_value) || 0, notes: mForm.notes })} className="px-4 py-2 bg-green-600 text-white rounded col-span-2">Registrar Medição</button>
             </div>
           )}
           <p className="text-xs text-gray-500 mb-4">Ao registrar uma medição, o sistema atualiza automaticamente o progresso da fase e gera reflexo financeiro.</p>
@@ -104,7 +105,7 @@ export default function ProjectDetailPage() {
                     <td className="p-2">{m.phase_name as string || "-"}</td>
                     <td className="p-2 text-right">{m.percent_complete as number}%</td>
                     <td className="p-2 text-right">{formatBRL(m.measured_value as number)}</td>
-                    <td className="p-2 text-sm text-gray-500">{m.observation as string || "-"}</td>
+                    <td className="p-2 text-sm text-gray-500">{(m.notes as string) || "-"}</td>
                   </tr>
                 ))}
               </tbody>

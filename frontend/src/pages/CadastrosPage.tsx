@@ -257,7 +257,7 @@ function SinapiTab() {
   const qc = useQueryClient()
   const { showToast } = useToast()
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: "", reference_date: "", url: "" })
+  const [form, setForm] = useState({ name: "", reference_month: "", url: "" })
 
   const createMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => sinapiApi.createSource(d),
@@ -276,7 +276,7 @@ function SinapiTab() {
       {showForm && (
         <div className="bg-gray-50 p-4 rounded mb-4 grid grid-cols-3 gap-3">
           <input placeholder="Nome da fonte" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Data referência (ex: 01/2025)" value={form.reference_date} onChange={(e) => setForm({ ...form, reference_date: e.target.value })} className="border rounded px-3 py-2" />
+          <input placeholder="Data referência (ex: 01/2025)" value={form.reference_month} onChange={(e) => setForm({ ...form, reference_month: e.target.value })} className="border rounded px-3 py-2" />
           <input placeholder="URL (opcional)" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className="border rounded px-3 py-2" />
           <button onClick={() => createMut.mutate(form)} className="px-4 py-2 bg-green-600 text-white rounded">Salvar</button>
         </div>

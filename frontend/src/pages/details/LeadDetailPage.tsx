@@ -103,7 +103,7 @@ export default function LeadDetailPage() {
           <div className="space-y-2">
             {(lead.interactions || []).map((i: Record<string, unknown>, idx: number) => (
               <div key={idx} className="bg-white border rounded p-3 flex justify-between">
-                <div><span className="font-medium capitalize">{i.type as string}</span> - {i.notes as string}</div>
+                <div><span className="font-medium capitalize">{i.type as string}</span> - {i.description as string}</div>
                 <span className="text-sm text-gray-400">{formatDateBR(i.created_at as string)}</span>
               </div>
             ))}
