@@ -140,6 +140,9 @@ async def create_receipt(
         elif item_data.quantity_received < item_data.quantity_expected:
             ri.status = "parcial"
             has_divergence = True
+        elif item_data.quantity_received > item_data.quantity_expected:
+            ri.status = "divergente"
+            has_divergence = True
         db.add(ri)
         receipt_items.append(ri)
     await db.flush()
