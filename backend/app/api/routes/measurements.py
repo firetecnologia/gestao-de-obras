@@ -59,8 +59,8 @@ async def list_measurements(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(Measurement)
-    count_query = select(func.count()).select_from(Measurement)
+    query = select(Measurement).where(Measurement.is_deleted.is_(False))
+    count_query = select(func.count()).select_from(Measurement).where(Measurement.is_deleted.is_(False))
 
     if project_id:
         query = query.where(Measurement.project_id == project_id)
@@ -172,7 +172,7 @@ async def update_measurement(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(Measurement).where(Measurement.id == measurement_id))
+    result = await db.execute(select(Measurement).where(Measurement.id == measurement_id, Measurement.is_deleted.is_(False)))
     measurement = result.scalar_one_or_none()
     if not measurement:
         raise HTTPException(status_code=404, detail="Medição não encontrada")
@@ -196,10 +196,11 @@ async def delete_measurement(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(Measurement).where(Measurement.id == measurement_id))
+    result = await db.execute(select(Measurement).where(Measurement.id == measurement_id, Measurement.is_deleted.is_(False)))
     measurement = result.scalar_one_or_none()
     if not measurement:
         raise HTTPException(status_code=404, detail="Medição não encontrada")
-    await db.delete(measurement)
+    measurement.is_deleted = True
+    measurement.deleted_at = datetime.now(timezone.utc)
     await db.flush()
     return MessageResponse(message="Medição removida com sucesso")

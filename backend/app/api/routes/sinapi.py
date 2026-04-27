@@ -105,11 +105,9 @@ async def import_sinapi_csv(
     except UnicodeDecodeError:
         text = content.decode("latin-1")
 
-    # Clear existing items before reimport to prevent duplicates
-    await db.execute(sa_delete(SinapiItem).where(SinapiItem.source_id == source_id))
-
+    # Parse CSV first to validate before deleting old data
     reader = csv.DictReader(io.StringIO(text), delimiter=";")
-    count = 0
+    new_items = []
     for row in reader:
         code = (row.get("code") or row.get("CODIGO") or row.get("codigo") or "").strip()
         description = (row.get("description") or row.get("DESCRICAO") or row.get("descricao") or "").strip()
@@ -123,13 +121,19 @@ async def import_sinapi_csv(
             unit_cost = 0
         category = (row.get("category") or row.get("CATEGORIA") or row.get("classe") or "").strip()
         origin = (row.get("origin") or row.get("TIPO") or row.get("tipo") or "").strip()
-
-        item = SinapiItem(
+        new_items.append(SinapiItem(
             source_id=source_id, code=code, description=description,
             unit=unit, unit_cost=unit_cost, category=category, origin=origin,
-        )
+        ))
+
+    if not new_items:
+        raise HTTPException(status_code=400, detail="Nenhum item válido encontrado no CSV. Dados existentes preservados.")
+
+    # Only delete old items after validating new ones
+    await db.execute(sa_delete(SinapiItem).where(SinapiItem.source_id == source_id))
+    for item in new_items:
         db.add(item)
-        count += 1
+    count = len(new_items)
 
     source.total_items = count
     source.status = "concluido"

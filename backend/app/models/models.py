@@ -633,7 +633,7 @@ class PurchaseOrderItem(Base, TimestampMixin):
     order = relationship("PurchaseOrder", back_populates="items")
 
 
-class Measurement(Base, TimestampMixin):
+class Measurement(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "measurements"
 
     id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
