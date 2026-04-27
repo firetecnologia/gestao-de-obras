@@ -146,6 +146,8 @@ async def generate_contract_from_template(
     if data.proposal_id:
         result = await db.execute(select(Proposal).where(Proposal.id == data.proposal_id, Proposal.is_deleted.is_(False)))
         proposal = result.scalar_one_or_none()
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposta não encontrada")
 
     # Build replacement data
     replacements = {

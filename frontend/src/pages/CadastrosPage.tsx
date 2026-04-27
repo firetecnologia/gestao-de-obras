@@ -150,7 +150,7 @@ function CompositionsTab() {
   const qc = useQueryClient()
   const { showToast } = useToast()
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: "", description: "", unit: "", category: "" })
+  const [form, setForm] = useState({ name: "", notes: "", unit: "", category: "" })
 
   const createMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => catalogApi.createComposition(d),
@@ -173,20 +173,20 @@ function CompositionsTab() {
           <input placeholder="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border rounded px-3 py-2" />
           <input placeholder="Unidade" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="border rounded px-3 py-2" />
           <input placeholder="Categoria" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Descrição" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="border rounded px-3 py-2" />
+          <input placeholder="Observações" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="border rounded px-3 py-2" />
           <button onClick={() => createMut.mutate(form)} className="px-4 py-2 bg-green-600 text-white rounded">Salvar</button>
         </div>
       )}
       {isLoading ? <p>Carregando...</p> : (
         <table className="w-full border-collapse">
-          <thead><tr className="bg-gray-100"><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Unidade</th><th className="p-2 text-left">Categoria</th><th className="p-2 text-left">Descrição</th><th className="p-2"></th></tr></thead>
+          <thead><tr className="bg-gray-100"><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Unidade</th><th className="p-2 text-left">Categoria</th><th className="p-2 text-left">Observações</th><th className="p-2"></th></tr></thead>
           <tbody>
             {items.map((c: Record<string, unknown>) => (
               <tr key={c.id as string} className="border-b hover:bg-gray-50">
                 <td className="p-2">{c.name as string}</td>
                 <td className="p-2">{c.unit as string}</td>
                 <td className="p-2">{(c.category as string) || "-"}</td>
-                <td className="p-2">{(c.description as string) || "-"}</td>
+                <td className="p-2">{(c.notes as string) || "-"}</td>
                 <td className="p-2 text-right"><button onClick={(e) => { e.stopPropagation(); deleteMut.mutate(c.id as string) }} className="text-red-600 hover:underline text-sm">Excluir</button></td>
               </tr>
             ))}
