@@ -4,8 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import os
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config import settings
-from app.core.database import init_db
+from app.core.database import get_db, init_db
 from app.core.deps import get_current_user
 from app.models.models import User
 from app.api.routes import (
@@ -85,9 +87,12 @@ async def api_root():
 @app.post("/api/seed")
 async def run_seed(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     if not current_user.role or current_user.role.name != "Administrador":
         raise HTTPException(status_code=403, detail="Apenas administradores podem executar seeds")
+    # Close auth session to release DB locks before DDL operations
+    await db.close()
     from app.seeds import seed
     await seed()
     return {"status": "ok", "message": "Seeds executados com sucesso"}
@@ -96,9 +101,12 @@ async def run_seed(
 @app.post("/api/reset-db")
 async def reset_database(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     if not current_user.role or current_user.role.name != "Administrador":
         raise HTTPException(status_code=403, detail="Apenas administradores podem resetar o banco")
+    # Close auth session to release DB locks before DDL operations
+    await db.close()
     from app.core.database import reset_db
     await reset_db()
     from app.seeds import seed

@@ -25,7 +25,7 @@ export default function LeadDetailPage() {
   })
   const addInteractionMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => leadsApi.addInteraction(id!, d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["lead", id] }); setInteraction({ type: "email", description: "" }); showToast("Interação registrada") },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["lead", id] }); setInteraction({ type: "ligacao", description: "" }); showToast("Interação registrada") },
   })
 
   if (!lead) return <div className="p-6">Carregando...</div>
