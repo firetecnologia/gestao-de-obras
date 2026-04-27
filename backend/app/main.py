@@ -86,6 +86,8 @@ async def api_root():
 async def run_seed(
     current_user: User = Depends(get_current_user),
 ):
+    if not current_user.role or current_user.role.name != "Administrador":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem executar seeds")
     from app.seeds import seed
     await seed()
     return {"status": "ok", "message": "Seeds executados com sucesso"}

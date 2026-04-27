@@ -14,7 +14,7 @@ export default function LeadDetailPage() {
   const { showToast } = useToast()
   const qc = useQueryClient()
   const [tab, setTab] = useState<Tab>("resumo")
-  const [interaction, setInteraction] = useState({ type: "email", description: "" })
+  const [interaction, setInteraction] = useState({ type: "ligacao", description: "" })
 
   const { data } = useQuery({ queryKey: ["lead", id], queryFn: () => leadsApi.get(id!) })
   const lead = data?.data
@@ -91,10 +91,11 @@ export default function LeadDetailPage() {
             <h3 className="font-semibold mb-2">Nova Interação</h3>
             <div className="flex gap-3">
               <select value={interaction.type} onChange={(e) => setInteraction({ ...interaction, type: e.target.value })} className="border rounded px-3 py-2">
+                <option value="ligacao">Ligação</option>
                 <option value="email">Email</option>
-                <option value="phone">Telefone</option>
-                <option value="meeting">Reunião</option>
+                <option value="reuniao">Reunião</option>
                 <option value="whatsapp">WhatsApp</option>
+                <option value="visita">Visita</option>
               </select>
               <input placeholder="Descrição" value={interaction.description} onChange={(e) => setInteraction({ ...interaction, description: e.target.value })} className="flex-1 border rounded px-3 py-2" />
               <button onClick={() => addInteractionMut.mutate(interaction)} className="px-4 py-2 bg-blue-600 text-white rounded">Registrar</button>

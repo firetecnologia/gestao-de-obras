@@ -101,7 +101,7 @@ export default function ProjectDetailPage() {
               <tbody>
                 {measurements.map((m: Record<string, unknown>) => (
                   <tr key={m.id as string} className="border-b">
-                    <td className="p-2">{formatDateBR(m.created_at as string)}</td>
+                    <td className="p-2">{formatDateBR(m.date as string)}</td>
                     <td className="p-2">{m.phase_name as string || "-"}</td>
                     <td className="p-2 text-right">{m.percent_complete as number}%</td>
                     <td className="p-2 text-right">{formatBRL(m.measured_value as number)}</td>
