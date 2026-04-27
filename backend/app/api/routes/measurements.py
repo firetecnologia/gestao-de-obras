@@ -105,15 +105,17 @@ async def create_measurement(
     if not project:
         raise HTTPException(status_code=404, detail="Obra não encontrada")
 
-    # Get next measurement number
-    count = (await db.execute(
-        select(func.count()).select_from(Measurement).where(Measurement.project_id == data.project_id)
+    # Get next measurement number (use MAX to avoid reuse after deletion)
+    max_number = (await db.execute(
+        select(func.coalesce(func.max(Measurement.measurement_number), 0))
+        .where(Measurement.project_id == data.project_id)
     )).scalar() or 0
+    next_number = max_number + 1
 
     measurement = Measurement(
         project_id=data.project_id,
         phase_id=data.phase_id,
-        measurement_number=count + 1,
+        measurement_number=next_number,
         date=data.date,
         percent_complete=data.percent_complete,
         measured_value=data.measured_value,
@@ -144,7 +146,7 @@ async def create_measurement(
             project_id=data.project_id,
             type="receita",
             category="medicao",
-            description=f"Medição #{count + 1} - {project.name}",
+            description=f"Medição #{next_number} - {project.name}",
             planned_amount=Decimal(str(data.measured_value)),
             status="pendente",
             created_by=current_user.id,
