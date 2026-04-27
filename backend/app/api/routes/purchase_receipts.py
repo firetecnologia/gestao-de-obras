@@ -106,7 +106,7 @@ async def create_receipt(
     current_user: User = Depends(get_current_user),
 ):
     # Verify order exists
-    order_result = await db.execute(select(PurchaseOrder).where(PurchaseOrder.id == data.order_id))
+    order_result = await db.execute(select(PurchaseOrder).where(PurchaseOrder.id == data.order_id, PurchaseOrder.is_deleted.is_(False)))
     order = order_result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Pedido de compra não encontrado")

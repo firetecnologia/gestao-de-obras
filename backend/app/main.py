@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
@@ -95,6 +95,8 @@ async def run_seed(
 async def reset_database(
     current_user: User = Depends(get_current_user),
 ):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem resetar o banco")
     from app.core.database import reset_db
     await reset_db()
     from app.seeds import seed
