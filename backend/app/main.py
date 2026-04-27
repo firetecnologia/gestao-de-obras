@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
@@ -6,6 +6,8 @@ import os
 
 from app.core.config import settings
 from app.core.database import init_db
+from app.core.deps import get_current_user
+from app.models.models import User
 from app.api.routes import (
     auth, users, clients, suppliers, projects, leads,
     proposals, contracts, planning, purchases, diary,
@@ -81,14 +83,18 @@ async def api_root():
 
 
 @app.post("/api/seed")
-async def run_seed():
+async def run_seed(
+    current_user: User = Depends(get_current_user),
+):
     from app.seeds import seed
     await seed()
     return {"status": "ok", "message": "Seeds executados com sucesso"}
 
 
 @app.post("/api/reset-db")
-async def reset_database():
+async def reset_database(
+    current_user: User = Depends(get_current_user),
+):
     from app.core.database import reset_db
     await reset_db()
     from app.seeds import seed

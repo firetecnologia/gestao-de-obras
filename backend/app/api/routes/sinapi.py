@@ -105,6 +105,9 @@ async def import_sinapi_csv(
     except UnicodeDecodeError:
         text = content.decode("latin-1")
 
+    # Clear existing items before reimport to prevent duplicates
+    await db.execute(sa_delete(SinapiItem).where(SinapiItem.source_id == source_id))
+
     reader = csv.DictReader(io.StringIO(text), delimiter=";")
     count = 0
     for row in reader:
