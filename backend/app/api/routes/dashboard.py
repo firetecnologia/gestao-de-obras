@@ -9,7 +9,7 @@ from typing import Optional
 from app.models.models import (
     User, Project, Lead, Contract, ContractInstallment,
     FinancialEntry, PurchaseRequest, WorkTask, WorkDiary, WorkPhase,
-    Client, Measurement,
+    Client, Measurement, Proposal,
 )
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboards"])
@@ -282,9 +282,22 @@ async def dashboard_pie_charts(
     project_status = await db.execute(project_status_query.group_by(Project.status))
     project_status_data = [{"label": r[0].replace("_", " ").title(), "value": r[1]} for r in project_status.all()]
 
-    installment_status = await db.execute(
+    installment_query = (
         select(ContractInstallment.status, func.count())
-        .group_by(ContractInstallment.status)
+        .select_from(ContractInstallment)
+    )
+    if project_id:
+        installment_query = (
+            installment_query
+            .join(Contract, ContractInstallment.contract_id == Contract.id)
+            .where(Contract.proposal_id.in_(
+                select(Proposal.id).where(Proposal.project_id == project_id)
+            ) | (Contract.client_id.in_(
+                select(Project.client_id).where(Project.id == project_id)
+            )))
+        )
+    installment_status = await db.execute(
+        installment_query.group_by(ContractInstallment.status)
     )
     installment_data = [{"label": r[0].replace("_", " ").title(), "value": r[1]} for r in installment_status.all()]
 
