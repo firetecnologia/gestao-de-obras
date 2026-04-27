@@ -179,7 +179,7 @@ async def dashboard_by_project(project_id: str, db: AsyncSession = Depends(get_d
     total_progress = sum(p.progress_percent or 0 for p in phases) / max(len(phases), 1)
 
     measurements_count = (await db.execute(
-        select(func.count()).select_from(Measurement).where(Measurement.project_id == project_id)
+        select(func.count()).select_from(Measurement).where(Measurement.project_id == project_id, Measurement.is_deleted.is_(False))
     )).scalar() or 0
 
     cat_result = await db.execute(
