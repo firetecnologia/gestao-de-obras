@@ -42,7 +42,7 @@ function ServicesTab() {
   const qc = useQueryClient()
   const { showToast } = useToast()
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: "", description: "", unit: "", cost_price: "", sale_price: "", category: "" })
+  const [form, setForm] = useState({ description: "", unit: "", default_cost: "", default_price: "", stage: "" })
 
   const createMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => catalogApi.createService(d),
@@ -62,26 +62,25 @@ function ServicesTab() {
       </div>
       {showForm && (
         <div className="bg-gray-50 p-4 rounded mb-4 grid grid-cols-3 gap-3">
-          <input placeholder="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Unidade" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Categoria" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Preço Custo" type="number" value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Preço Venda" type="number" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} className="border rounded px-3 py-2" />
           <input placeholder="Descrição" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="border rounded px-3 py-2" />
-          <button onClick={() => createMut.mutate({ ...form, cost_price: Number(form.cost_price) || 0, sale_price: Number(form.sale_price) || 0 })} className="px-4 py-2 bg-green-600 text-white rounded">Salvar</button>
+          <input placeholder="Unidade" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="border rounded px-3 py-2" />
+          <input placeholder="Etapa" value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value })} className="border rounded px-3 py-2" />
+          <input placeholder="Preço Custo" type="number" value={form.default_cost} onChange={(e) => setForm({ ...form, default_cost: e.target.value })} className="border rounded px-3 py-2" />
+          <input placeholder="Preço Venda" type="number" value={form.default_price} onChange={(e) => setForm({ ...form, default_price: e.target.value })} className="border rounded px-3 py-2" />
+          <button onClick={() => createMut.mutate({ ...form, default_cost: Number(form.default_cost) || 0, default_price: Number(form.default_price) || 0 })} className="px-4 py-2 bg-green-600 text-white rounded">Salvar</button>
         </div>
       )}
       {isLoading ? <p>Carregando...</p> : (
         <table className="w-full border-collapse">
-          <thead><tr className="bg-gray-100"><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Unidade</th><th className="p-2 text-left">Categoria</th><th className="p-2 text-right">Custo</th><th className="p-2 text-right">Venda</th><th className="p-2"></th></tr></thead>
+          <thead><tr className="bg-gray-100"><th className="p-2 text-left">Descrição</th><th className="p-2 text-left">Unidade</th><th className="p-2 text-left">Etapa</th><th className="p-2 text-right">Custo</th><th className="p-2 text-right">Venda</th><th className="p-2"></th></tr></thead>
           <tbody>
             {items.map((s: Record<string, unknown>) => (
               <tr key={s.id as string} className="border-b hover:bg-gray-50">
-                <td className="p-2">{s.name as string}</td>
+                <td className="p-2">{s.description as string}</td>
                 <td className="p-2">{s.unit as string}</td>
-                <td className="p-2">{s.category as string}</td>
-                <td className="p-2 text-right">{formatBRL(s.cost_price as number)}</td>
-                <td className="p-2 text-right">{formatBRL(s.sale_price as number)}</td>
+                <td className="p-2">{(s.stage as string) || "-"}</td>
+                <td className="p-2 text-right">{formatBRL(s.default_cost as number)}</td>
+                <td className="p-2 text-right">{formatBRL(s.default_price as number)}</td>
                 <td className="p-2 text-right"><button onClick={(e) => { e.stopPropagation(); deleteMut.mutate(s.id as string) }} className="text-red-600 hover:underline text-sm">Excluir</button></td>
               </tr>
             ))}
@@ -97,7 +96,7 @@ function MaterialsTab() {
   const qc = useQueryClient()
   const { showToast } = useToast()
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: "", description: "", unit: "", cost_price: "", sale_price: "", category: "", brand: "" })
+  const [form, setForm] = useState({ name: "", unit: "", default_cost: "", default_price: "", category: "" })
 
   const createMut = useMutation({
     mutationFn: (d: Record<string, unknown>) => catalogApi.createMaterial(d),
@@ -120,24 +119,22 @@ function MaterialsTab() {
           <input placeholder="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border rounded px-3 py-2" />
           <input placeholder="Unidade" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="border rounded px-3 py-2" />
           <input placeholder="Categoria" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Marca" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Preço Custo" type="number" value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Preço Venda" type="number" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Descrição" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="border rounded px-3 py-2" />
-          <button onClick={() => createMut.mutate({ ...form, cost_price: Number(form.cost_price) || 0, sale_price: Number(form.sale_price) || 0 })} className="px-4 py-2 bg-green-600 text-white rounded">Salvar</button>
+          <input placeholder="Preço Custo" type="number" value={form.default_cost} onChange={(e) => setForm({ ...form, default_cost: e.target.value })} className="border rounded px-3 py-2" />
+          <input placeholder="Preço Venda" type="number" value={form.default_price} onChange={(e) => setForm({ ...form, default_price: e.target.value })} className="border rounded px-3 py-2" />
+          <button onClick={() => createMut.mutate({ ...form, default_cost: Number(form.default_cost) || 0, default_price: Number(form.default_price) || 0 })} className="px-4 py-2 bg-green-600 text-white rounded">Salvar</button>
         </div>
       )}
       {isLoading ? <p>Carregando...</p> : (
         <table className="w-full border-collapse">
-          <thead><tr className="bg-gray-100"><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Unidade</th><th className="p-2 text-left">Marca</th><th className="p-2 text-right">Custo</th><th className="p-2 text-right">Venda</th><th className="p-2"></th></tr></thead>
+          <thead><tr className="bg-gray-100"><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Unidade</th><th className="p-2 text-left">Categoria</th><th className="p-2 text-right">Custo</th><th className="p-2 text-right">Venda</th><th className="p-2"></th></tr></thead>
           <tbody>
             {items.map((m: Record<string, unknown>) => (
               <tr key={m.id as string} className="border-b hover:bg-gray-50">
                 <td className="p-2">{m.name as string}</td>
                 <td className="p-2">{m.unit as string}</td>
-                <td className="p-2">{(m.brand as string) || "-"}</td>
-                <td className="p-2 text-right">{formatBRL(m.cost_price as number)}</td>
-                <td className="p-2 text-right">{formatBRL(m.sale_price as number)}</td>
+                <td className="p-2">{(m.category as string) || "-"}</td>
+                <td className="p-2 text-right">{formatBRL(m.default_cost as number)}</td>
+                <td className="p-2 text-right">{formatBRL(m.default_price as number)}</td>
                 <td className="p-2 text-right"><button onClick={(e) => { e.stopPropagation(); deleteMut.mutate(m.id as string) }} className="text-red-600 hover:underline text-sm">Excluir</button></td>
               </tr>
             ))}
