@@ -24,7 +24,7 @@ class ClientBankDataCreate(BaseModel):
     pix_key_type: Optional[str] = None
     holder_name: Optional[str] = None
     holder_cpf_cnpj: Optional[str] = None
-    is_primary: bool = False
+    is_primary: bool = True
     notes: Optional[str] = None
 
 router = APIRouter(prefix="/clients", tags=["Clientes"])

@@ -253,7 +253,7 @@ function TemplatesTab() {
 function SinapiTab() {
   const { data: sourcesData, isLoading } = useQuery({ queryKey: ["sinapi-sources"], queryFn: () => sinapiApi.listSources() })
   const [search, setSearch] = useState("")
-  const { data: itemsData } = useQuery({ queryKey: ["sinapi-items", search], queryFn: () => sinapiApi.searchItems({ search, limit: 50 }), enabled: search.length > 2 })
+  const { data: itemsData } = useQuery({ queryKey: ["sinapi-items", search], queryFn: () => sinapiApi.searchItems({ search, page_size: 50 }), enabled: search.length > 2 })
   const qc = useQueryClient()
   const { showToast } = useToast()
   const [showForm, setShowForm] = useState(false)

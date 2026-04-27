@@ -45,3 +45,14 @@ async def get_db():
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+
+async def reset_db():
+    from sqlalchemy import text as sa_text
+    async with engine.begin() as conn:
+        if "sqlite" in settings.DATABASE_URL:
+            await conn.execute(sa_text("PRAGMA foreign_keys=OFF"))
+        await conn.run_sync(Base.metadata.drop_all)
+        if "sqlite" in settings.DATABASE_URL:
+            await conn.execute(sa_text("PRAGMA foreign_keys=ON"))
+        await conn.run_sync(Base.metadata.create_all)

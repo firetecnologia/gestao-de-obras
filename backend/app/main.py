@@ -85,3 +85,12 @@ async def run_seed():
     from app.seeds import seed
     await seed()
     return {"status": "ok", "message": "Seeds executados com sucesso"}
+
+
+@app.post("/api/reset-db")
+async def reset_database():
+    from app.core.database import reset_db
+    await reset_db()
+    from app.seeds import seed
+    await seed()
+    return {"status": "ok", "message": "Database reset and seeded"}
