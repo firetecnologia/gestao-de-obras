@@ -34,6 +34,14 @@ class LeadBase(BaseModel):
     responsible_id: Optional[str] = None
     notes: Optional[str] = None
     next_followup: Optional[datetime] = None
+    # Address fields
+    address_street: Optional[str] = None
+    address_number: Optional[str] = None
+    address_complement: Optional[str] = None
+    address_neighborhood: Optional[str] = None
+    address_city: Optional[str] = None
+    address_state: Optional[str] = None
+    address_zip: Optional[str] = None
 
 
 class LeadCreate(LeadBase):
@@ -51,6 +59,13 @@ class LeadUpdate(BaseModel):
     notes: Optional[str] = None
     lost_reason: Optional[str] = None
     next_followup: Optional[datetime] = None
+    address_street: Optional[str] = None
+    address_number: Optional[str] = None
+    address_complement: Optional[str] = None
+    address_neighborhood: Optional[str] = None
+    address_city: Optional[str] = None
+    address_state: Optional[str] = None
+    address_zip: Optional[str] = None
 
 
 class LeadConvertRequest(BaseModel):

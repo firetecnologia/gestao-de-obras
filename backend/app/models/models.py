@@ -246,6 +246,14 @@ class Lead(Base, TimestampMixin, SoftDeleteMixin):
     lost_reason = Column(Text, nullable=True)
     next_followup = Column(DateTime(timezone=True), nullable=True)
     converted_at = Column(DateTime(timezone=True), nullable=True)
+    # Address fields
+    address_street = Column(String(255), nullable=True)
+    address_number = Column(String(20), nullable=True)
+    address_complement = Column(String(100), nullable=True)
+    address_neighborhood = Column(String(100), nullable=True)
+    address_city = Column(String(100), nullable=True)
+    address_state = Column(String(2), nullable=True)
+    address_zip = Column(String(10), nullable=True)
 
     responsible = relationship("User", foreign_keys=[responsible_id])
     client = relationship("Client", back_populates="leads")
@@ -273,12 +281,31 @@ class Supplier(Base, TimestampMixin, SoftDeleteMixin):
     name = Column(String(255), nullable=False, index=True)
     company_name = Column(String(255), nullable=True)
     cpf_cnpj = Column(String(20), nullable=True, index=True)
+    inscricao_estadual = Column(String(30), nullable=True)
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
+    phone2 = Column(String(20), nullable=True)
+    contact_name = Column(String(255), nullable=True)
     specialty = Column(String(255), nullable=True)
+    billing_type = Column(String(100), nullable=True)  # pf, pj, mei
+    average_deadline_days = Column(Integer, nullable=True)
+    address_street = Column(String(255), nullable=True)
+    address_number = Column(String(20), nullable=True)
+    address_complement = Column(String(100), nullable=True)
+    address_neighborhood = Column(String(100), nullable=True)
     address_city = Column(String(100), nullable=True)
     address_state = Column(String(2), nullable=True)
+    address_zip = Column(String(10), nullable=True)
     region = Column(String(100), nullable=True)
+    # Bank data
+    bank_name = Column(String(100), nullable=True)
+    bank_agency = Column(String(20), nullable=True)
+    bank_account = Column(String(30), nullable=True)
+    bank_account_type = Column(String(20), nullable=True)  # corrente, poupanca
+    pix_key = Column(String(255), nullable=True)
+    pix_key_type = Column(String(20), nullable=True)  # cpf, cnpj, email, telefone, aleatoria
+    bank_holder_name = Column(String(255), nullable=True)
+    bank_holder_cpf_cnpj = Column(String(20), nullable=True)
     notes = Column(Text, nullable=True)
     rating = Column(Integer, nullable=True)  # 1-5
     created_by = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=True)
@@ -606,7 +633,7 @@ class PurchaseOrderItem(Base, TimestampMixin):
     order = relationship("PurchaseOrder", back_populates="items")
 
 
-class Measurement(Base, TimestampMixin):
+class Measurement(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "measurements"
 
     id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
@@ -935,3 +962,130 @@ class ProposalCommercialTerms(Base, TimestampMixin):
     min_margin_percent = Column(Numeric(5, 2), nullable=True)
 
     proposal = relationship("Proposal", backref="commercial_terms_rel")
+
+
+# ==================== CLIENT BANK DATA ====================
+
+class ClientBankData(Base, TimestampMixin):
+    __tablename__ = "client_bank_data"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    client_id = Column(UUID(as_uuid=False), ForeignKey("clients.id"), nullable=False)
+    bank_name = Column(String(100), nullable=True)
+    bank_agency = Column(String(20), nullable=True)
+    bank_account = Column(String(30), nullable=True)
+    bank_account_type = Column(String(20), nullable=True)  # corrente, poupanca
+    pix_key = Column(String(255), nullable=True)
+    pix_key_type = Column(String(20), nullable=True)
+    holder_name = Column(String(255), nullable=True)
+    holder_cpf_cnpj = Column(String(20), nullable=True)
+    is_primary = Column(Boolean, default=True)
+    notes = Column(Text, nullable=True)
+
+    client = relationship("Client", backref="bank_data")
+
+
+# ==================== CONTRACT TEMPLATES ====================
+
+class ContractTemplate(Base, TimestampMixin, SoftDeleteMixin):
+    __tablename__ = "contract_templates"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    content = Column(Text, nullable=False)  # Template with {{placeholders}}
+    category = Column(String(100), nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_by = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=True)
+
+
+# ==================== SINAPI ====================
+
+class SinapiSource(Base, TimestampMixin):
+    __tablename__ = "sinapi_sources"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    reference_month = Column(String(20), nullable=True)  # e.g. "01-2025"
+    state = Column(String(2), nullable=True)
+    source_type = Column(String(50), nullable=False, default="upload")  # upload, url
+    url = Column(String(500), nullable=True)
+    file_path = Column(String(500), nullable=True)
+    total_items = Column(Integer, default=0)
+    imported_at = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String(50), default="pendente")  # pendente, importando, concluido, erro
+    notes = Column(Text, nullable=True)
+
+
+class SinapiItem(Base, TimestampMixin):
+    __tablename__ = "sinapi_items"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    source_id = Column(UUID(as_uuid=False), ForeignKey("sinapi_sources.id"), nullable=False)
+    code = Column(String(50), nullable=False, index=True)
+    description = Column(Text, nullable=False)
+    unit = Column(String(20), nullable=True)
+    unit_cost = Column(Numeric(14, 4), nullable=True)
+    category = Column(String(100), nullable=True)
+    origin = Column(String(100), nullable=True)  # composicao, insumo
+
+    source = relationship("SinapiSource", backref="items")
+
+
+# ==================== MEASUREMENT ATTACHMENTS ====================
+
+class MeasurementAttachment(Base, TimestampMixin):
+    __tablename__ = "measurement_attachments"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    measurement_id = Column(UUID(as_uuid=False), ForeignKey("measurements.id"), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    file_name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+
+
+# ==================== PURCHASE RECEIPTS ====================
+
+class PurchaseReceipt(Base, TimestampMixin):
+    __tablename__ = "purchase_receipts"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    order_id = Column(UUID(as_uuid=False), ForeignKey("purchase_orders.id"), nullable=False)
+    received_date = Column(Date, nullable=False)
+    received_by = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=True)
+    status = Column(String(50), nullable=False, default="completo")  # completo, parcial, divergente
+    notes = Column(Text, nullable=True)
+
+    order = relationship("PurchaseOrder", backref="receipts")
+    items = relationship("PurchaseReceiptItem", back_populates="receipt", cascade="all, delete-orphan")
+
+
+class PurchaseReceiptItem(Base, TimestampMixin):
+    __tablename__ = "purchase_receipt_items"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    receipt_id = Column(UUID(as_uuid=False), ForeignKey("purchase_receipts.id"), nullable=False)
+    order_item_id = Column(UUID(as_uuid=False), ForeignKey("purchase_order_items.id"), nullable=True)
+    description = Column(Text, nullable=False)
+    quantity_expected = Column(Numeric(12, 4), nullable=False, default=0)
+    quantity_received = Column(Numeric(12, 4), nullable=False, default=0)
+    status = Column(String(50), nullable=False, default="ok")  # ok, parcial, divergente, nao_recebido
+    notes = Column(Text, nullable=True)
+
+    receipt = relationship("PurchaseReceipt", back_populates="items")
+
+
+# ==================== DIARY ATTACHMENTS (ENHANCED) ====================
+
+class DiaryAttachment(Base, TimestampMixin):
+    __tablename__ = "diary_attachments"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=generate_uuid)
+    diary_id = Column(UUID(as_uuid=False), ForeignKey("work_diaries.id"), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    file_name = Column(String(255), nullable=False)
+    file_type = Column(String(50), nullable=True)  # foto, documento
+    description = Column(Text, nullable=True)
+    uploaded_by = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=True)
+
+    diary = relationship("WorkDiary", backref="attachments")

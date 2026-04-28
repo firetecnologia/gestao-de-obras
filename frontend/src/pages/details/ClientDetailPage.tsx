@@ -1,176 +1,145 @@
-import { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
-import { DetailPageHeader } from "@/components/shared/DetailPageHeader"
-import { InfoCard } from "@/components/shared/InfoCard"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { clientsApi, proposalsApi, contractsApi, projectsApi } from "@/services/api"
+import { useState } from "react"
+import { useParams } from "react-router-dom"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { clientsApi, clientBankDataApi } from "@/services/api"
+import { formatDateBR } from "@/lib/format"
 import { useToast } from "@/components/ui/toast"
-import { formatBRL, formatDateBR } from "@/lib/format"
-import { Mail, Phone, Building2, MapPin } from "lucide-react"
+import { DetailPageHeader } from "@/components/shared/DetailPageHeader"
 
-interface Client {
-  id: string; person_type: string; name: string; company_name?: string
-  cpf_cnpj?: string; email?: string; phone?: string
-  address_street?: string; address_city?: string; address_state?: string
-  notes?: string; created_at?: string
-}
+type Tab = "resumo" | "contatos" | "bancario" | "obras" | "contratos"
 
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const [client, setClient] = useState<Client | null>(null)
-  const [proposals, setProposals] = useState<Array<Record<string, unknown>>>([])
-  const [contracts, setContracts] = useState<Array<Record<string, unknown>>>([])
-  const [projects, setProjects] = useState<Array<Record<string, unknown>>>([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("resumo")
   const { showToast } = useToast()
+  const qc = useQueryClient()
+  const [tab, setTab] = useState<Tab>("resumo")
 
-  useEffect(() => {
-    if (!id) return
-    const fetch = async () => {
-      setLoading(true)
-      try {
-        const [cRes, pRes, ctRes, prRes] = await Promise.all([
-          clientsApi.get(id),
-          proposalsApi.list({ page_size: 100 }),
-          contractsApi.list({ page_size: 100 }),
-          projectsApi.list({ page_size: 100 }),
-        ])
-        setClient(cRes.data)
-        setProposals(pRes.data.items?.filter((p: Record<string, unknown>) => p.client_id === id) || [])
-        setContracts(ctRes.data.items?.filter((c: Record<string, unknown>) => c.client_id === id) || [])
-        setProjects(prRes.data.items?.filter((p: Record<string, unknown>) => p.client_id === id) || [])
-      } catch {
-        showToast("Erro ao carregar cliente", "error")
-      } finally { setLoading(false) }
-    }
-    fetch()
-  }, [id, showToast])
+  const { data } = useQuery({ queryKey: ["client", id], queryFn: () => clientsApi.get(id!) })
+  const { data: bankData } = useQuery({ queryKey: ["client-bank", id], queryFn: () => clientBankDataApi.list(id!), enabled: tab === "bancario" })
+  const client = data?.data
+  const bankItems = bankData?.data || []
 
-  if (loading) return <div className="flex items-center justify-center py-20"><p className="text-slate-500">Carregando...</p></div>
-  if (!client) return <div className="flex items-center justify-center py-20"><p className="text-slate-500">Cliente nao encontrado</p></div>
+  const [bankForm, setBankForm] = useState({ bank_name: "", bank_agency: "", bank_account: "", bank_account_type: "corrente", pix_key: "", pix_key_type: "cpf", holder_name: "", holder_cpf_cnpj: "" })
+  const [showBankForm, setShowBankForm] = useState(false)
+
+  const addBankMut = useMutation({
+    mutationFn: (d: Record<string, unknown>) => clientBankDataApi.create(id!, d),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["client-bank", id] }); setShowBankForm(false); showToast("Dados bancários adicionados") },
+  })
+  const delBankMut = useMutation({
+    mutationFn: (bankId: string) => clientBankDataApi.delete(id!, bankId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["client-bank", id] }); showToast("Dados bancários removidos") },
+  })
+
+  if (!client) return <div className="p-6">Carregando...</div>
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "resumo", label: "Resumo" },
+    { key: "contatos", label: "Contatos" },
+    { key: "bancario", label: "Dados Bancários" },
+    { key: "obras", label: "Obras" },
+    { key: "contratos", label: "Contratos" },
+  ]
 
   return (
-    <div className="space-y-4">
-      <DetailPageHeader
-        title={client.name}
-        subtitle={client.company_name || client.email || ""}
-        breadcrumbs={[
-          { label: "Clientes", href: "/clients" },
-          { label: client.name },
-        ]}
-        actions={
-          <Badge variant={client.person_type === "fisica" ? "info" : "secondary"}>
-            {client.person_type === "fisica" ? "Pessoa Fisica" : "Pessoa Juridica"}
-          </Badge>
-        }
-      />
+    <div className="p-6">
+      <DetailPageHeader title={client.name} breadcrumbs={[{ label: "Clientes", href: "/clients" }, { label: client.name }]} />
+      <div className="flex gap-2 mb-6 border-b">
+        {tabs.map((t) => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            className={`px-4 py-2 font-medium border-b-2 ${tab === t.key ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="resumo">Resumo</TabsTrigger>
-          <TabsTrigger value="obras">Obras ({projects.length})</TabsTrigger>
-          <TabsTrigger value="propostas">Propostas ({proposals.length})</TabsTrigger>
-          <TabsTrigger value="contratos">Contratos ({contracts.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="resumo">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <InfoCard label="Tipo" value={client.person_type === "fisica" ? "Pessoa Fisica" : "Pessoa Juridica"} />
-            <InfoCard label="CPF/CNPJ" value={client.cpf_cnpj || "-"} />
-            <InfoCard label="Obras" value={String(projects.length)} />
-            <InfoCard label="Criado em" value={formatDateBR(client.created_at)} />
+      {tab === "resumo" && (
+        <div className="grid grid-cols-2 gap-6">
+          <div className="bg-white border rounded-lg p-4 space-y-3">
+            <h3 className="font-semibold">Informações</h3>
+            <p><span className="text-gray-500">Email:</span> {client.email || "-"}</p>
+            <p><span className="text-gray-500">Telefone:</span> {client.phone || "-"}</p>
+            <p><span className="text-gray-500">CPF/CNPJ:</span> {client.cpf_cnpj || "-"}</p>
+            <p><span className="text-gray-500">Tipo:</span> {client.person_type === "juridica" ? "Pessoa Jurídica" : "Pessoa Física"}</p>
+            <p><span className="text-gray-500">Empresa:</span> {client.company_name || "-"}</p>
+            <p><span className="text-gray-500">Criado em:</span> {formatDateBR(client.created_at)}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardContent className="pt-6 space-y-3">
-                <h3 className="font-semibold text-slate-700 mb-3">Contato</h3>
-                {client.email && <div className="flex items-center gap-2 text-sm"><Mail className="h-4 w-4 text-slate-400" />{client.email}</div>}
-                {client.phone && <div className="flex items-center gap-2 text-sm"><Phone className="h-4 w-4 text-slate-400" />{client.phone}</div>}
-                {client.company_name && <div className="flex items-center gap-2 text-sm"><Building2 className="h-4 w-4 text-slate-400" />{client.company_name}</div>}
-                {client.address_city && <div className="flex items-center gap-2 text-sm"><MapPin className="h-4 w-4 text-slate-400" />{client.address_city}{client.address_state ? "/" + client.address_state : ""}</div>}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="font-semibold text-slate-700 mb-3">Observacoes</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-wrap">{client.notes || "Nenhuma observacao."}</p>
-              </CardContent>
-            </Card>
+          <div className="bg-white border rounded-lg p-4 space-y-3">
+            <h3 className="font-semibold">Endereço</h3>
+            <p><span className="text-gray-500">Logradouro:</span> {client.address_street || "-"}</p>
+            <p><span className="text-gray-500">Número:</span> {client.address_number || "-"}</p>
+            <p><span className="text-gray-500">Complemento:</span> {client.address_complement || "-"}</p>
+            <p><span className="text-gray-500">Bairro:</span> {client.address_neighborhood || "-"}</p>
+            <p><span className="text-gray-500">Cidade:</span> {client.address_city || "-"}</p>
+            <p><span className="text-gray-500">Estado:</span> {client.address_state || "-"}</p>
+            <p><span className="text-gray-500">CEP:</span> {client.address_zip || "-"}</p>
           </div>
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="obras">
-          <Card><CardContent className="p-0">
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Codigo</TableHead><TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Status</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {projects.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-slate-500">Nenhuma obra vinculada</TableCell></TableRow>
-                ) : projects.map((p) => (
-                  <TableRow key={String(p.id)} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate("/projects/" + p.id)}>
-                    <TableCell className="font-mono text-sm">{String(p.code || "")}</TableCell>
-                    <TableCell className="font-medium">{String(p.name || "")}</TableCell>
-                    <TableCell className="text-sm">{String(p.type || "")}</TableCell>
-                    <TableCell><StatusBadge status={String(p.status || "")} /></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent></Card>
-        </TabsContent>
+      {tab === "contatos" && (
+        <div className="bg-white border rounded-lg p-4">
+          <h3 className="font-semibold mb-3">Contatos</h3>
+          {(client.contacts || []).length === 0 ? <p className="text-gray-500">Nenhum contato cadastrado</p> : (
+            <div className="space-y-2">
+              {(client.contacts || []).map((c: Record<string, unknown>) => (
+                <div key={c.id as string} className="flex items-center justify-between border rounded p-3">
+                  <div><span className="font-medium">{c.name as string}</span> - {c.email as string} / {c.phone as string}</div>
+                  <span className="text-sm text-gray-400">{c.role as string}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-        <TabsContent value="propostas">
-          <Card><CardContent className="p-0">
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Codigo</TableHead><TableHead>Titulo</TableHead><TableHead>Valor</TableHead><TableHead>Status</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {proposals.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-slate-500">Nenhuma proposta</TableCell></TableRow>
-                ) : proposals.map((p) => (
-                  <TableRow key={String(p.id)} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate("/proposals/" + p.id)}>
-                    <TableCell className="font-mono text-sm">{String(p.code || "")}</TableCell>
-                    <TableCell className="font-medium">{String(p.title || "")}</TableCell>
-                    <TableCell className="font-semibold">{formatBRL(p.total_price)}</TableCell>
-                    <TableCell><StatusBadge status={String(p.status || "")} /></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent></Card>
-        </TabsContent>
+      {tab === "bancario" && (
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-semibold">Dados Bancários</h3>
+            <button onClick={() => setShowBankForm(!showBankForm)} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">+ Adicionar</button>
+          </div>
+          {showBankForm && (
+            <div className="bg-gray-50 p-4 rounded mb-4 grid grid-cols-2 gap-3">
+              <input placeholder="Banco" value={bankForm.bank_name} onChange={(e) => setBankForm({ ...bankForm, bank_name: e.target.value })} className="border rounded px-3 py-2" />
+              <input placeholder="Agência" value={bankForm.bank_agency} onChange={(e) => setBankForm({ ...bankForm, bank_agency: e.target.value })} className="border rounded px-3 py-2" />
+              <input placeholder="Conta" value={bankForm.bank_account} onChange={(e) => setBankForm({ ...bankForm, bank_account: e.target.value })} className="border rounded px-3 py-2" />
+              <select value={bankForm.bank_account_type} onChange={(e) => setBankForm({ ...bankForm, bank_account_type: e.target.value })} className="border rounded px-3 py-2">
+                <option value="corrente">Corrente</option>
+                <option value="poupanca">Poupança</option>
+              </select>
+              <input placeholder="Chave PIX" value={bankForm.pix_key} onChange={(e) => setBankForm({ ...bankForm, pix_key: e.target.value })} className="border rounded px-3 py-2" />
+              <select value={bankForm.pix_key_type} onChange={(e) => setBankForm({ ...bankForm, pix_key_type: e.target.value })} className="border rounded px-3 py-2">
+                <option value="cpf">CPF</option>
+                <option value="cnpj">CNPJ</option>
+                <option value="email">Email</option>
+                <option value="telefone">Telefone</option>
+                <option value="aleatoria">Aleatória</option>
+              </select>
+              <input placeholder="Favorecido" value={bankForm.holder_name} onChange={(e) => setBankForm({ ...bankForm, holder_name: e.target.value })} className="border rounded px-3 py-2" />
+              <input placeholder="CPF/CNPJ Favorecido" value={bankForm.holder_cpf_cnpj} onChange={(e) => setBankForm({ ...bankForm, holder_cpf_cnpj: e.target.value })} className="border rounded px-3 py-2" />
+              <button onClick={() => addBankMut.mutate(bankForm)} className="px-4 py-2 bg-green-600 text-white rounded col-span-2">Salvar</button>
+            </div>
+          )}
+          {bankItems.length === 0 ? <p className="text-gray-500">Nenhum dado bancário cadastrado</p> : (
+            <div className="space-y-3">
+              {bankItems.map((b: Record<string, unknown>) => (
+                <div key={b.id as string} className="bg-white border rounded-lg p-4 flex justify-between items-start">
+                  <div className="space-y-1">
+                    <p className="font-medium">{b.bank_name as string} - Ag: {b.bank_agency as string} / Cc: {b.bank_account as string}</p>
+                    <p className="text-sm text-gray-500">PIX ({b.pix_key_type as string}): {b.pix_key as string}</p>
+                    <p className="text-sm text-gray-500">Favorecido: {b.holder_name as string}</p>
+                  </div>
+                  <button onClick={() => delBankMut.mutate(b.id as string)} className="text-red-600 text-sm hover:underline">Remover</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-        <TabsContent value="contratos">
-          <Card><CardContent className="p-0">
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Codigo</TableHead><TableHead>Titulo</TableHead><TableHead>Valor</TableHead><TableHead>Status</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {contracts.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8 text-slate-500">Nenhum contrato</TableCell></TableRow>
-                ) : contracts.map((c) => (
-                  <TableRow key={String(c.id)} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate("/contracts/" + c.id)}>
-                    <TableCell className="font-mono text-sm">{String(c.code || "")}</TableCell>
-                    <TableCell className="font-medium">{String(c.title || "")}</TableCell>
-                    <TableCell className="font-semibold">{formatBRL(c.total_value)}</TableCell>
-                    <TableCell><StatusBadge status={String(c.status || "")} /></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent></Card>
-        </TabsContent>
-      </Tabs>
+      {tab === "obras" && <div className="text-gray-500">Obras vinculadas ao cliente aparecerão aqui.</div>}
+      {tab === "contratos" && <div className="text-gray-500">Contratos vinculados ao cliente aparecerão aqui.</div>}
     </div>
   )
 }

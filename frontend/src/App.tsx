@@ -17,6 +17,7 @@ import DiaryPage from "@/pages/DiaryPage"
 import FinancialPage from "@/pages/FinancialPage"
 import DocumentsPage from "@/pages/DocumentsPage"
 import UsersPage from "@/pages/UsersPage"
+import CadastrosPage from "@/pages/CadastrosPage"
 import LeadDetailPage from "@/pages/details/LeadDetailPage"
 import ClientDetailPage from "@/pages/details/ClientDetailPage"
 import ProposalDetailPage from "@/pages/details/ProposalDetailPage"
@@ -56,6 +57,7 @@ function App() {
               <Route path="/financial" element={<FinancialPage />} />
               <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/users" element={<UsersPage />} />
+              <Route path="/cadastros" element={<CadastrosPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
