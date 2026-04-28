@@ -12,8 +12,8 @@ export default function DashboardPage() {
 
   const { data: execData } = useQuery({ queryKey: ["dashboard-executive"], queryFn: dashboardApi.executive })
   const { data: pieData } = useQuery({ queryKey: ["dashboard-pie"], queryFn: dashboardApi.pieCharts })
-  const { data: projectsData } = useQuery({ queryKey: ["projects-list"], queryFn: () => projectsApi.list() })
-  const { data: clientsData } = useQuery({ queryKey: ["clients-list"], queryFn: () => clientsApi.list() })
+  const { data: projectsData } = useQuery({ queryKey: ["projects-list"], queryFn: () => projectsApi.list({ page_size: 100 }) })
+  const { data: clientsData } = useQuery({ queryKey: ["clients-list"], queryFn: () => clientsApi.list({ page_size: 100 }) })
   const { data: projectDash } = useQuery({ queryKey: ["dashboard-project", selectedProject], queryFn: () => dashboardApi.byProject(selectedProject), enabled: !!selectedProject })
   const { data: clientDash } = useQuery({ queryKey: ["dashboard-client", selectedClient], queryFn: () => dashboardApi.byClient(selectedClient), enabled: !!selectedClient })
 
