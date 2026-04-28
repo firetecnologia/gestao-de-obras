@@ -91,40 +91,6 @@ async def create_template(data: ContractTemplateCreate, db: AsyncSession = Depen
     return ContractTemplateResponse.model_validate(template)
 
 
-@router.get("/{template_id}", response_model=ContractTemplateResponse)
-async def get_template(template_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(ContractTemplate).where(ContractTemplate.id == template_id, ContractTemplate.is_deleted.is_(False)))
-    template = result.scalar_one_or_none()
-    if not template:
-        raise HTTPException(status_code=404, detail="Modelo não encontrado")
-    return ContractTemplateResponse.model_validate(template)
-
-
-@router.put("/{template_id}", response_model=ContractTemplateResponse)
-async def update_template(template_id: str, data: ContractTemplateUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(ContractTemplate).where(ContractTemplate.id == template_id, ContractTemplate.is_deleted.is_(False)))
-    template = result.scalar_one_or_none()
-    if not template:
-        raise HTTPException(status_code=404, detail="Modelo não encontrado")
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(template, field, value)
-    await db.flush()
-    await db.refresh(template)
-    return ContractTemplateResponse.model_validate(template)
-
-
-@router.delete("/{template_id}", response_model=MessageResponse)
-async def delete_template(template_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(ContractTemplate).where(ContractTemplate.id == template_id, ContractTemplate.is_deleted.is_(False)))
-    template = result.scalar_one_or_none()
-    if not template:
-        raise HTTPException(status_code=404, detail="Modelo não encontrado")
-    template.is_deleted = True
-    template.deleted_at = datetime.now(timezone.utc)
-    await db.flush()
-    return MessageResponse(message="Modelo removido com sucesso")
-
-
 @router.post("/generate", response_model=MessageResponse)
 async def generate_contract_from_template(
     data: GenerateContractRequest,
@@ -208,3 +174,37 @@ async def generate_contract_from_template(
             continue
 
     return MessageResponse(message=f"Contrato gerado com sucesso. ID: {contract.id}")
+
+
+@router.get("/{template_id}", response_model=ContractTemplateResponse)
+async def get_template(template_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    result = await db.execute(select(ContractTemplate).where(ContractTemplate.id == template_id, ContractTemplate.is_deleted.is_(False)))
+    template = result.scalar_one_or_none()
+    if not template:
+        raise HTTPException(status_code=404, detail="Modelo não encontrado")
+    return ContractTemplateResponse.model_validate(template)
+
+
+@router.put("/{template_id}", response_model=ContractTemplateResponse)
+async def update_template(template_id: str, data: ContractTemplateUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    result = await db.execute(select(ContractTemplate).where(ContractTemplate.id == template_id, ContractTemplate.is_deleted.is_(False)))
+    template = result.scalar_one_or_none()
+    if not template:
+        raise HTTPException(status_code=404, detail="Modelo não encontrado")
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(template, field, value)
+    await db.flush()
+    await db.refresh(template)
+    return ContractTemplateResponse.model_validate(template)
+
+
+@router.delete("/{template_id}", response_model=MessageResponse)
+async def delete_template(template_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    result = await db.execute(select(ContractTemplate).where(ContractTemplate.id == template_id, ContractTemplate.is_deleted.is_(False)))
+    template = result.scalar_one_or_none()
+    if not template:
+        raise HTTPException(status_code=404, detail="Modelo não encontrado")
+    template.is_deleted = True
+    template.deleted_at = datetime.now(timezone.utc)
+    await db.flush()
+    return MessageResponse(message="Modelo removido com sucesso")
