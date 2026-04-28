@@ -99,8 +99,6 @@ async def reset_database(
 ):
     if not current_user.role or current_user.role.name != "Administrador":
         raise HTTPException(status_code=403, detail="Apenas administradores podem resetar o banco")
-    from app.core.database import reset_db
-    await reset_db()
     from app.seeds import seed
     await seed()
     return {"status": "ok", "message": "Database reset and seeded"}
