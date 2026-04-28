@@ -138,6 +138,8 @@ async def create_measurement(
                 phase.status = "em_andamento"
                 if not phase.actual_start:
                     phase.actual_start = data.date
+            else:
+                phase.status = "nao_iniciada"
             await db.flush()
 
     # AUTOMATION: Create financial reflection for next payment
@@ -176,9 +178,30 @@ async def update_measurement(
     measurement = result.scalar_one_or_none()
     if not measurement:
         raise HTTPException(status_code=404, detail="Medição não encontrada")
-    for field, value in data.model_dump(exclude_unset=True).items():
+    updated_fields = data.model_dump(exclude_unset=True)
+    for field, value in updated_fields.items():
         setattr(measurement, field, value)
     await db.flush()
+
+    # AUTOMATION: Sync phase progress when percent_complete is updated
+    if "percent_complete" in updated_fields and measurement.phase_id:
+        pct = measurement.percent_complete
+        if pct is not None:
+            phase_result = await db.execute(select(WorkPhase).where(WorkPhase.id == measurement.phase_id))
+            phase = phase_result.scalar_one_or_none()
+            if phase:
+                phase.progress_percent = int(pct)
+                if pct >= 100:
+                    phase.status = "concluida"
+                    phase.actual_end = measurement.date
+                elif pct > 0:
+                    phase.status = "em_andamento"
+                    if not phase.actual_start:
+                        phase.actual_start = measurement.date
+                else:
+                    phase.status = "nao_iniciada"
+                await db.flush()
+
     await db.refresh(measurement)
     return MeasurementResponse(
         id=measurement.id, project_id=measurement.project_id,
