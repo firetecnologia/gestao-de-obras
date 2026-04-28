@@ -127,7 +127,7 @@ async def create_measurement(
 
     # AUTOMATION: Update phase progress if phase_id provided
     if data.phase_id and data.percent_complete is not None:
-        phase_result = await db.execute(select(WorkPhase).where(WorkPhase.id == data.phase_id))
+        phase_result = await db.execute(select(WorkPhase).where(WorkPhase.id == data.phase_id, WorkPhase.project_id == data.project_id))
         phase = phase_result.scalar_one_or_none()
         if phase:
             phase.progress_percent = int(data.percent_complete)
@@ -187,7 +187,7 @@ async def update_measurement(
     if "percent_complete" in updated_fields and measurement.phase_id:
         pct = measurement.percent_complete
         if pct is not None:
-            phase_result = await db.execute(select(WorkPhase).where(WorkPhase.id == measurement.phase_id))
+            phase_result = await db.execute(select(WorkPhase).where(WorkPhase.id == measurement.phase_id, WorkPhase.project_id == measurement.project_id))
             phase = phase_result.scalar_one_or_none()
             if phase:
                 phase.progress_percent = int(pct)
