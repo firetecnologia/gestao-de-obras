@@ -83,6 +83,36 @@ export default function DashboardPage() {
     intervalRef.current = setInterval(() => fetchData(link), REFRESH_INTERVAL);
   }, [fetchData]);
 
+  const handleUpload = useCallback(async (file: File) => {
+    setLoading(true);
+    setError(null);
+    setStatus('connecting');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const json = await res.json();
+
+      if (!res.ok) {
+        setError(json.error || 'Erro ao processar o arquivo.');
+        setStatus('error');
+        return;
+      }
+
+      setData({ ...json, connected: true });
+      setStatus('connected');
+      setLastUpdated(json.lastUpdated);
+      setCurrentLink(`📁 ${file.name}`);
+    } catch {
+      setError('Erro ao enviar o arquivo. Tente novamente.');
+      setStatus('error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const handleRefresh = useCallback(() => {
     if (currentLink) fetchData(currentLink);
   }, [currentLink, fetchData]);
@@ -146,7 +176,7 @@ export default function DashboardPage() {
   if (loading && !data.connected) {
     return (
       <div className="min-h-screen">
-        <Header onConnect={handleConnect} onRefresh={handleRefresh} connectionStatus={status} lastUpdated={lastUpdated} currentLink={currentLink} />
+        <Header onConnect={handleConnect} onUpload={handleUpload} onRefresh={handleRefresh} connectionStatus={status} lastUpdated={lastUpdated} currentLink={currentLink} />
         <main className="max-w-[1600px] mx-auto p-4 space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {Array.from({ length: 10 }).map((_, i) => <CardSkeleton key={i} />)}
@@ -161,7 +191,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen">
-      <Header onConnect={handleConnect} onRefresh={handleRefresh} connectionStatus={status} lastUpdated={lastUpdated} currentLink={currentLink} />
+      <Header onConnect={handleConnect} onUpload={handleUpload} onRefresh={handleRefresh} connectionStatus={status} lastUpdated={lastUpdated} currentLink={currentLink} />
 
       <main className="max-w-[1600px] mx-auto p-4 space-y-5">
         {/* Error */}
@@ -230,7 +260,7 @@ export default function DashboardPage() {
         {/* Footer info */}
         {!data.connected && (
           <div className="text-center py-6 text-xs text-[var(--color-text-muted)]">
-            <p>Dados de demonstração. Cole o link de uma planilha Google Sheets acima para carregar dados reais.</p>
+            <p>Dados de demonstração. Cole o link de uma planilha Google Sheets ou faça upload de um arquivo Excel/CSV para carregar dados reais.</p>
           </div>
         )}
       </main>

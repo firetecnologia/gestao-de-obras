@@ -5,14 +5,21 @@ import type { ConnectionStatus } from '@/types';
 
 interface HeaderProps {
   onConnect: (link: string) => void;
+  onUpload: (file: File) => void;
   onRefresh: () => void;
   connectionStatus: ConnectionStatus;
   lastUpdated: string | null;
   currentLink: string;
 }
 
-export function Header({ onConnect, onRefresh, connectionStatus, lastUpdated, currentLink }: HeaderProps) {
+export function Header({ onConnect, onUpload, onRefresh, connectionStatus, lastUpdated, currentLink }: HeaderProps) {
   const [link, setLink] = useState(currentLink);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onUpload(file);
+    e.target.value = '';
+  };
 
   useEffect(() => {
     if (currentLink) setLink(currentLink);
@@ -62,7 +69,7 @@ export function Header({ onConnect, onRefresh, connectionStatus, lastUpdated, cu
               value={link}
               onChange={e => setLink(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleConnect()}
-              placeholder="Cole o link ou ID da planilha Google Sheets..."
+              placeholder="Cole o link do Google Sheets ou envie um arquivo Excel..."
               className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-light)] focus:border-transparent bg-gray-50"
             />
             <button
@@ -72,6 +79,15 @@ export function Header({ onConnect, onRefresh, connectionStatus, lastUpdated, cu
             >
               Conectar
             </button>
+            <label className="px-3 py-2 text-sm font-medium text-white bg-[var(--color-success)] rounded-lg hover:opacity-90 transition-colors cursor-pointer shrink-0">
+              📁 Upload Excel
+              <input
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
             <button
               onClick={onRefresh}
               disabled={connectionStatus !== 'connected'}
