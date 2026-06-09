@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
       const rows = XLSX.utils.sheet_to_json<(string | number | null | undefined)[]>(sheet, {
         header: 1,
         defval: '',
-        rawNumbers: false,
       });
       return { title: sheetName, rows };
     });
