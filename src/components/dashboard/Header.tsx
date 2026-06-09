@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ConnectionStatus } from '@/types';
 
 interface HeaderProps {
@@ -13,6 +13,10 @@ interface HeaderProps {
 
 export function Header({ onConnect, onRefresh, connectionStatus, lastUpdated, currentLink }: HeaderProps) {
   const [link, setLink] = useState(currentLink);
+
+  useEffect(() => {
+    if (currentLink) setLink(currentLink);
+  }, [currentLink]);
 
   const handleConnect = () => {
     if (link.trim()) onConnect(link.trim());

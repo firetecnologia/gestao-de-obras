@@ -116,6 +116,16 @@ export default function DashboardPage() {
       if (filtros.status && o.status !== filtros.status) return false;
       return true;
     }),
+    maoDeObraReal: data.maoDeObraReal.filter(m => {
+      if (filtros.obra && !`${m.idObra}`.includes(filtros.obra.split(' - ')[0])) return false;
+      if (filtros.status && m.status !== filtros.status) return false;
+      return true;
+    }),
+    medicoes: data.medicoes.filter(m => {
+      if (filtros.obra && !`${m.idObra}`.includes(filtros.obra.split(' - ')[0])) return false;
+      if (filtros.status && m.status !== filtros.status) return false;
+      return true;
+    }),
   };
 
   // KPI calculations

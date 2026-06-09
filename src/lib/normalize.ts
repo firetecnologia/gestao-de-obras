@@ -10,21 +10,22 @@ function normalize(str: string): string {
   return removeAccents(str).toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
-const TAB_ALIASES: Record<string, string[]> = {
-  obras: ['obras', 'obra', 'projetos'],
-  orcamentoMateriais: ['orcamento materiais', 'materiais', 'orc materiais', 'orcamento material'],
-  orcamentoServicos: ['orcamento servicos', 'servicos', 'orc servicos', 'orcamento servico'],
-  comprasReais: ['compras reais', 'compras', 'compras real'],
-  maoDeObraReal: ['mao de obra real', 'mao de obra', 'mdo', 'mao obra'],
-  medicoes: ['medicoes', 'medicao', 'medições', 'mediçoes'],
-  cadastros: ['cadastros', 'cadastro'],
-  dadosDashboard: ['dados dashboard', 'dashboard', 'dados'],
-};
+// Ordered from most specific to least specific to avoid substring false positives
+const TAB_ALIASES: [string, string[]][] = [
+  ['maoDeObraReal', ['mao de obra real', 'mao de obra', 'mdo', 'mao obra']],
+  ['orcamentoMateriais', ['orcamento materiais', 'materiais', 'orc materiais', 'orcamento material']],
+  ['orcamentoServicos', ['orcamento servicos', 'servicos', 'orc servicos', 'orcamento servico']],
+  ['comprasReais', ['compras reais', 'compras', 'compras real']],
+  ['medicoes', ['medicoes', 'medicao']],
+  ['cadastros', ['cadastros', 'cadastro']],
+  ['dadosDashboard', ['dados dashboard']],
+  ['obras', ['obras', 'obra', 'projetos']],
+];
 
 export function matchTabName(sheetTitle: string): string | null {
   const norm = normalize(sheetTitle);
-  for (const [key, aliases] of Object.entries(TAB_ALIASES)) {
-    if (aliases.some(alias => norm === alias || norm.includes(alias))) {
+  for (const [key, aliases] of TAB_ALIASES) {
+    if (aliases.some(alias => norm === alias)) {
       return key;
     }
   }
@@ -50,15 +51,15 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   material: ['material', 'mat', 'item'],
   unidade: ['unidade', 'un', 'und'],
   quantidade: ['quantidade', 'qtd', 'qtde', 'quant'],
-  custoUnitario: ['custo unitario', 'custo unit', 'vlr unit', 'valor unitario'],
-  custoTotal: ['custo total', 'vlr total', 'total custo'],
+  custoUnitario: ['custo unitario', 'custo unit'],
+  custoTotal: ['custo total', 'total custo'],
   valorVenda: ['valor venda', 'vlr venda', 'preco venda', 'valor de venda'],
   ambiente: ['ambiente', 'amb', 'local'],
   etapa: ['etapa', 'fase'],
   servico: ['servico', 'serviço', 'serv'],
   data: ['data', 'dt', 'date'],
   fornecedor: ['fornecedor', 'forn', 'supplier'],
-  valorUnitario: ['valor unitario', 'vlr unitario', 'preco unitario'],
+  valorUnitario: ['valor unitario', 'vlr unitario', 'vlr unit', 'preco unitario'],
   valorTotal: ['valor total', 'vlr total', 'total'],
   centroCusto: ['centro de custo', 'centro custo', 'cc', 'centrocusto'],
   prestador: ['prestador', 'prest', 'profissional'],
