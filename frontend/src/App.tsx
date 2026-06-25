@@ -18,6 +18,7 @@ import FinancialPage from "@/pages/FinancialPage"
 import DocumentsPage from "@/pages/DocumentsPage"
 import UsersPage from "@/pages/UsersPage"
 import CadastrosPage from "@/pages/CadastrosPage"
+import SlabCalculationPage from "@/pages/SlabCalculationPage"
 import LeadDetailPage from "@/pages/details/LeadDetailPage"
 import ClientDetailPage from "@/pages/details/ClientDetailPage"
 import ProposalDetailPage from "@/pages/details/ProposalDetailPage"
@@ -58,6 +59,7 @@ function App() {
               <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/cadastros" element={<CadastrosPage />} />
+              <Route path="/calculo-lajes" element={<SlabCalculationPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
