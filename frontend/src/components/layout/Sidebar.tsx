@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Building2, Truck,
   Target, FileText, FileSignature, Calendar,
   ShoppingCart, BookOpen, DollarSign, FileArchive,
-  ChevronLeft, ChevronRight, LogOut, HardHat, Database
+  ChevronLeft, ChevronRight, LogOut, HardHat, Database, Calculator
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { cn } from "@/lib/utils"
@@ -23,6 +23,7 @@ const menuItems = [
   { path: "/documents", label: "Documentos", icon: FileArchive },
   { path: "/suppliers", label: "Fornecedores", icon: Truck },
   { path: "/cadastros", label: "Cadastros", icon: Database },
+  { path: "/calculo-lajes", label: "Cálculo de Lajes", icon: Calculator },
   { path: "/users", label: "Usuários", icon: Users },
 ]
 
